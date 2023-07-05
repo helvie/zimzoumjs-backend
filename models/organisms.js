@@ -23,7 +23,7 @@ const organismSchema = mongoose.Schema({
   emailPrivate:String,
 
   organismSort:String,
-  name:String,
+  orgName:String,
   location:locationSchema,
   emailPublic:String,
   phonePublic:Number,
