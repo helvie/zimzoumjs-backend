@@ -14,7 +14,7 @@ router.post('/signup', (req, res) => {
   }
 
   // Check if the user has not already been registered
-  User.findOne({ username: req.body.email }).then(data => {
+  User.findOne({ email: req.body.email }).then(data => {
     if (data === null) {
       const hash = bcrypt.hashSync(req.body.password, 10);
 
@@ -24,8 +24,8 @@ router.post('/signup', (req, res) => {
         token: uid2(32),
       });
 
-      newUser.save().then(newDoc => {
-        res.json({ result: true, token: newDoc.token });
+      newUser.save().then(newUser => {
+        res.json({ result: true, token: newUser.token });
       });
     } else {
       // User already exists in database
@@ -35,26 +35,28 @@ router.post('/signup', (req, res) => {
 });
 
 router.post('/signin', (req, res) => {
-  if (!checkBody(req.body, ['username', 'password'])) {
+  console.log(req.body.password)
+
+  if (!checkBody(req.body, ['email', 'password'])) {
     res.json({ result: false, error: 'Missing or empty fields' });
     return;
   }
 
-  User.findOne({ username: req.body.username }).then(data => {
-    if (data && bcrypt.compareSync(req.body.password, data.password)) {
+  User.findOne({ email: req.body.email }).then(data => {
+    console.log("trouvé")
+
+
+    if (data && (req.body.password == data.password)) {
+      console.log(req.body.password)
+
+    // if (data && bcrypt.compareSync(req.body.password, data.password)) {
+      console.log("trouvé mais mauvais password")
+
       res.json({ result: true, token: data.token });
     } else {
-      res.json({ result: false, error: 'User not found or wrong password' });
-    }
-  });
-});
+      console.log("pas trouvé")
 
-router.get('/canBookmark/:token', (req, res) => {
-  User.findOne({ token: req.params.token }).then(data => {
-    if (data) {
-      res.json({ result: true });
-    } else {
-      res.json({ result: false, error: 'User not found' });
+      res.json({ result: false, error: 'User not found or wrong password' });
     }
   });
 });

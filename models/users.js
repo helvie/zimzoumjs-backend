@@ -16,10 +16,10 @@ const userSchema = mongoose.Schema({
     required: true,
     unique: true
   },
-  organisms: [{ 
+  organisms: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'organisms' 
-  }]
+  }
 
 })
 

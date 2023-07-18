@@ -1,18 +1,16 @@
 const mongoose = require('mongoose');
 
+
 const regularClassSchema = mongoose.Schema({
-  availability:Number,
-  availabilityDate:Date,
-  miniAge:Number,
-  maxiAge:Number,
+  category:String,
+  startAge:Number,
+  endAge:Number,
+  activity:String,
   description:String,
-  valid:Boolean,
   visible:Boolean,
-  day:String,
-  startTime:String,
-  endTime:String,
-  grade:String,
-  animator:String
+  valid:Boolean,
+  // regularClassesDetail:[{ type: mongoose.Schema.Types.ObjectId, ref: 'regularClassDetail' }],
+
 });
 
 const RegularClass = mongoose.model('regularClasses', regularClassSchema);

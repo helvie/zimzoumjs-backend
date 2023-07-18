@@ -1,0 +1,19 @@
+const mongoose = require('mongoose');
+
+
+
+const regularClassDetailSchema = mongoose.Schema({
+  availability:String,
+  availabilityDate:Date,
+  startAge:Number,
+  endAge:Number,
+  day:String,
+  startTime:String,
+  endTime:String,
+  grade:String,
+  animator:String
+});
+
+const RegularClassDetail = mongoose.model('regularClassesDetail', regularClassDetailSchema);
+
+module.exports = RegularClassDetail;
