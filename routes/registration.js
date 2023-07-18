@@ -7,7 +7,7 @@ const Organism = require('../models/organisms');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
-const RegularClassDetail = require('../models/regularClassesDetail');
+const RegularClassDetail = require('../models/regularClassesDetails');
 const RegularClass = require('../models/regularClasses');
 
 // Configuration de Cloudinary
@@ -104,9 +104,10 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
 
 router.post("/activityRegistration", async (req, res) => {
   // Vérifier le token pour authentifier l'utilisateur
-  const { token, regularClass, regularClassesDetail } = req.body;
+  const { token, regularClass, regularClassesDetails } = req.body.dataActivity;
 
   // console.log(req.body.token)
+  console.log(regularClassesDetails)
 
   try {
     const user = await User.findOne({ token: token });
@@ -120,27 +121,33 @@ const organism = await Organism.findOne({ user: user._id }).populate('user');
       // Gérer le cas où l'organisme n'a pas été trouvé
       return res.status(404).json({ message: "Organisme introuvable" });
     }
-    console.log(organism)
+    // console.log(organism)
 
     // 2. Créer et enregistrer une nouvelle regularClass
     const newRegularClass = new RegularClass(regularClass);
-    newRegularClass.save();
+    const savedRegularClass = await newRegularClass.save();
 
     // 3. Récupérer l'ID généré pour la nouvelle regularClass
     const regularClassId = savedRegularClass._id;
 
     // 4. Pour chaque élément dans le tableau regularClassesDetail, créer et enregistrer un nouvel objet regularclassesdetail
-    const savedRegularClassDetails = await Promise.all(
-      regularClassesDetail.map(async (detail) => {
-        const newRegularClassDetail = new RegularClassDetail(detail);
+    const savedRegularClassesDetails = await Promise.all(
+      regularClassesDetails.map(async (detail) => {
+        const newRegularClassDetail = new RegularClassDetail(detail.data);
         const savedRegularClassDetail = await newRegularClassDetail.save();
-        return savedRegularClassDetail;
+        return savedRegularClassDetail._id;
       })
     );
+    
+    savedRegularClass.regularClassesDetails = savedRegularClassesDetails;
+console.log(savedRegularClass)
 
+        await savedRegularClass.save();
     // 5. Mettre à jour le tableau regularclasses dans l'organisme avec l'ID de la nouvelle regularClass créée
-    organism.regularclasses.push(regularClassId);
+    organism.regularClasses.push(regularClassId);
     await organism.save();
+
+
 
     res.status(200).json({ message: "Regular classes enregistrées avec succès" });
   } catch (error) {

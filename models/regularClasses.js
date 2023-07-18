@@ -9,7 +9,7 @@ const regularClassSchema = mongoose.Schema({
   description:String,
   visible:Boolean,
   valid:Boolean,
-  // regularClassesDetail:[{ type: mongoose.Schema.Types.ObjectId, ref: 'regularClassDetail' }],
+  regularClassesDetails:[{ type: mongoose.Schema.Types.ObjectId, ref: 'regularClassesDetails' }],
 
 });
 

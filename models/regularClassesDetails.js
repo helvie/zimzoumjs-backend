@@ -14,6 +14,6 @@ const regularClassDetailSchema = mongoose.Schema({
   animator:String
 });
 
-const RegularClassDetail = mongoose.model('regularClassesDetail', regularClassDetailSchema);
+const RegularClassDetail = mongoose.model('regularClassesDetails', regularClassDetailSchema);
 
 module.exports = RegularClassDetail;

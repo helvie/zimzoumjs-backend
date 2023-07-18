@@ -42,7 +42,7 @@ const organismSchema = mongoose.Schema({
   sentMail:Number,
   orgMain:Boolean,
 
-  regularClasses:[{ type: mongoose.Schema.Types.ObjectId, ref: 'regularClass' }],
+  regularClasses:[{ type: mongoose.Schema.Types.ObjectId, ref: 'regularClasses' }],
 });
 
 const Organism = mongoose.model('organisms', organismSchema);
