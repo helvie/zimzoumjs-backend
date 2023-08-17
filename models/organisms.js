@@ -16,7 +16,7 @@ const organismSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'users' 
   },
-  orgNumber:String,
+  orgNumber:Number,
   respRole:String,
   respCivility:String,
   respName:String,

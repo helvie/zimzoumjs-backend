@@ -71,11 +71,17 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
       return res.status(404).json({ error: 'User not found' });
     }
 
+    const lastOrganism = await Organism.findOne({}, {}, { sort: { orgNumber: -1 } });
+
+    console.log("orgNumber : "+lastOrganism.orgNumber)
+
     // Récupérer les données JSON depuis le corps de la requête
     const orgData = JSON.parse(req.body.orgData);
 
     // Créer une nouvelle instance de l'objet Organism avec les données reçues
     const newOrganism = new Organism(orgData);
+
+    newOrganism.orgNumber = lastOrganism.orgNumber+1;
 
     // Assigner la clé étrangère de l'utilisateur à l'organisme
     newOrganism.user = user._id;
@@ -88,10 +94,10 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
     const savedOrganism = await newOrganism.save();
 
     // Ajouter la clé étrangère de l'organisme à la liste des organismes de l'utilisateur
-    user.organisms.push(savedOrganism._id);
+    // user.organisms.push(savedOrganism._id);
 
     // Enregistrer les modifications de l'utilisateur dans la base de données
-    await user.save();
+    // await user.save();
 
     // Retourner la réponse avec les données de l'organisme nouvellement enregistré
     res.json({ result: savedOrganism.orgName });
@@ -103,55 +109,44 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
 });
 
 router.post("/activityRegistration", async (req, res) => {
-  // Vérifier le token pour authentifier l'utilisateur
   const { token, regularClass, regularClassesDetails } = req.body.dataActivity;
-
-  // console.log(req.body.token)
-  console.log(regularClassesDetails)
 
   try {
     const user = await User.findOne({ token: token });
-if (!user) {
-  return res.status(404).json({ message: "Utilisateur introuvable" });
-}
 
-const organism = await Organism.findOne({ user: user._id }).populate('user');
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur introuvable" });
+    }
+
+    const organism = await Organism.findOne({ user: user._id }).populate('user');
 
     if (!organism) {
-      // Gérer le cas où l'organisme n'a pas été trouvé
       return res.status(404).json({ message: "Organisme introuvable" });
     }
-    // console.log(organism)
 
-    // 2. Créer et enregistrer une nouvelle regularClass
     const newRegularClass = new RegularClass(regularClass);
     const savedRegularClass = await newRegularClass.save();
 
-    // 3. Récupérer l'ID généré pour la nouvelle regularClass
-    const regularClassId = savedRegularClass._id;
-
-    // 4. Pour chaque élément dans le tableau regularClassesDetail, créer et enregistrer un nouvel objet regularclassesdetail
     const savedRegularClassesDetails = await Promise.all(
       regularClassesDetails.map(async (detail) => {
         const newRegularClassDetail = new RegularClassDetail(detail.data);
+        newRegularClassDetail.startTime = `${detail.data.startHours}:${detail.data.startMinutes}`;
         const savedRegularClassDetail = await newRegularClassDetail.save();
         return savedRegularClassDetail._id;
       })
     );
-    
+
     savedRegularClass.regularClassesDetails = savedRegularClassesDetails;
-console.log(savedRegularClass)
 
-        await savedRegularClass.save();
-    // 5. Mettre à jour le tableau regularclasses dans l'organisme avec l'ID de la nouvelle regularClass créée
-    organism.regularClasses.push(regularClassId);
+    // Enregistrez la RegularClass une seule fois
+    await savedRegularClass.save();
+
+    // Ajoutez l'ID de la RegularClass à l'organisme
+    organism.regularClasses.push(savedRegularClass._id);
     await organism.save();
-
-
 
     res.status(200).json({ message: "Regular classes enregistrées avec succès" });
   } catch (error) {
-    // Gérer les erreurs
     res.status(500).json({ message: "Une erreur s'est produite lors de l'enregistrement des regular classes" });
   }
 });

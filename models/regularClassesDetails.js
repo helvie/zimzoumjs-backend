@@ -5,11 +5,13 @@ const mongoose = require('mongoose');
 const regularClassDetailSchema = mongoose.Schema({
   availability:String,
   availabilityDate:Date,
-  startAge:Number,
-  endAge:Number,
+  detailStartAge:Number,
+  detailEndAge:Number,
   day:String,
-  startTime:String,
-  endTime:String,
+  startHours:Number,  
+  startMinutes:Number,
+  endMinutes:Number,
+  endHours:Number,
   grade:String,
   animator:String
 });
