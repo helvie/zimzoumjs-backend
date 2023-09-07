@@ -35,7 +35,7 @@ router.post('/signup', (req, res) => {
 });
 
 router.post('/signin', (req, res) => {
-  console.log(req.body.password)
+  // console.log(req.body.password)
 
   if (!checkBody(req.body, ['email', 'password'])) {
     res.json({ result: false, error: 'Missing or empty fields' });
@@ -47,12 +47,13 @@ router.post('/signin', (req, res) => {
 
 
     if (data && (req.body.password == data.password)) {
-      console.log(req.body.password)
+      // console.log(req.body.password)
 
     // if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      console.log("trouvé mais mauvais password")
+      // console.log("trouvé mais mauvais password")
+      console.log("essai : "+data)
 
-      res.json({ result: true, token: data.token });
+      res.json({ result: true, token: data.token, mail:req.body.email });
     } else {
       console.log("pas trouvé")
 

@@ -15,22 +15,8 @@ router.get('/allOrganisms', (req, res) => {
   });
 });
 
-// router.get("/:orgNumber", (req, res) => {
-  
-//   console.log(req.params.orgNumber)
-//   Organism.findOne({
-//     orgNumber: req.params.orgNumber,
-//   })
-//   .populate("regularClasses")
-//   .then(data => {
-//     if (data) {
-//       console.log(data)
-//       res.json({ result: true, organism: data });
-//     } else {
-//       res.json({ result: false, error: "organisme non trouvé" });
-//     }
-//   });
-// });
+
+
 router.get("/:orgNumber", async (req, res) => {
   try {
     console.log(req.params.orgNumber);
@@ -56,6 +42,122 @@ router.get("/:orgNumber", async (req, res) => {
     res.status(500).json({ result: false, error: "Erreur lors de la récupération des données" });
   }
 });
+
+router.post("/organismDisplayForUpdate", async (req, res) => {
+  try {
+    console.log(req.body.token);
+
+    const user = await User.findOne({
+      token: req.body.token,
+    });
+
+    if (user) {
+      const organism = await Organism.findOne({
+        user: user._id,
+      })
+      .populate({
+        path: 'regularClasses',
+        populate: {
+          path: 'regularClassesDetails',
+          model: 'regularClassesDetails'
+        },
+      });
+
+      if (organism) {
+        console.log(organism);
+        res.json({ result: true, organism: organism });
+      } else {
+        console.log('Organisme non trouvé');
+        res.json({ result: false, error: 'Organisme non trouvé' });
+      }
+    } else {
+      console.log('Utilisateur non trouvé');
+      res.json({ result: false, error: 'Utilisateur non trouvé' });
+    }
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données:', error);
+    res.status(500).json({ result: false, error: '????Erreur lors de la récupération des données' });
+  }
+})
+
+router.post("/updateField", async (req, res) => {
+  try {
+
+    const { field, value, token } = req.body;
+
+    const user = await User.findOne({
+      token: token,
+    });
+
+    if (user) {
+      const organism = await Organism.findOne({
+        user: user._id,
+      })
+      .populate({
+        path: 'regularClasses',
+        populate: {
+          path: 'regularClassesDetails',
+          model: 'regularClassesDetails'
+        },
+      });
+
+      if (organism) {
+        Organism.updateOne({ _id: organism._id }, { [field] : value }).then(() => {
+          // console.log(`Price updated for ${articleId}`);
+      
+        console.log("ok "+organism);
+        res.json({ result: true, organism: organism });
+        })
+      } else {
+        console.log('Organisme non trouvé');
+        res.json({ result: false, error: 'Organisme non trouvé' });
+      }
+    } else {
+      console.log('Utilisateur non trouvé');
+      res.json({ result: false, error: 'Utilisateur non trouvé' });
+    }
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données:', error);
+    res.status(500).json({ result: false, error: '????Erreur lors de la récupération des données' });
+  }
+})
+
+router.post("/organismDisplayForUpdate", async (req, res) => {
+  try {
+    console.log(req.body.token);
+
+    const user = await User.findOne({
+      token: req.body.token,
+    });
+
+    if (user) {
+      const organism = await Organism.findOne({
+        user: user._id,
+      })
+      .populate({
+        path: 'regularClasses',
+        populate: {
+          path: 'regularClassesDetails',
+          model: 'regularClassesDetails'
+        },
+      });
+
+      if (organism) {
+        console.log(organism);
+        res.json({ result: true, organism: organism });
+      } else {
+        console.log('Organisme non trouvé');
+        res.json({ result: false, error: 'Organisme non trouvé' });
+      }
+    } else {
+      console.log('Utilisateur non trouvé');
+      res.json({ result: false, error: 'Utilisateur non trouvé' });
+    }
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données:', error);
+    res.status(500).json({ result: false, error: '????Erreur lors de la récupération des données' });
+  }
+})
 
 router.post('/createdOrganism', async (req, res) => {
   try {

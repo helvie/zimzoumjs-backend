@@ -36,6 +36,122 @@ const upload = multer({
 });
 
 // Route pour l'enregistrement d'un organisme
+router.post('/imageRegistration', upload.fields([{ name: 'image', maxCount: 1 }]), async (req, res) => {
+  console.log(req.files)
+  try {
+    // Vérifie si les fichiers photo ont été uploadés
+    if (!req.files || !req.files['image']) {      
+
+      return res.status(400).json({ message: 'Aucun fichier photo uploadé' });
+    }
+
+    // Chemin local du fichier temporaire
+    const photoFilePath = req.files['image'][0].path;
+
+    // Upload de la photo sur Cloudinary de manière asynchrone
+    const photoUpload = cloudinary.uploader.upload(photoFilePath);
+
+    // Attendre que les uploads sur Cloudinary soient terminés
+    const [photoUploadResult] = await Promise.all([photoUpload]);
+
+    // Supprime le fichier temporaire après l'upload
+    fs.unlinkSync(photoFilePath);
+
+    // Récupère l'URL de la photo sur Cloudinary
+    const photoUrl = photoUploadResult.secure_url;
+
+    // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
+    const user = await User.findOne({ token: req.body.token });
+
+    if (!user) {      
+
+      // L'utilisateur n'est pas trouvé, renvoyer une erreur ou une réponse appropriée
+      return res.status(404).json({ error: 'User not found' });
+
+    }
+
+    // Recherche de l'organisme associé à l'utilisateur
+    const organism = await Organism.findOne({ user: user._id });
+
+    if (organism) {
+
+      // Met à jour l'URL de l'image de l'organisme
+      await Organism.updateOne({ _id: organism._id }, { image: photoUrl });
+      console.log("photo url : "+photoUrl)
+
+      // Renvoie une réponse avec le nom de l'organisme mis à jour
+      res.json({ result: true, photoUrl: photoUrl });
+    } else {
+
+      console.log('Organisme non trouvé');
+      res.json({ result: false, error: 'Organisme non trouvé' });
+    }
+  } catch (error) {
+    // Gérer les erreurs
+    console.error('Une erreur s\'est produite:', error);
+    res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
+  }
+});
+
+// Route pour l'enregistrement d'un organisme
+router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), async (req, res) => {
+  console.log(req.files)
+  try {
+    // Vérifie si les fichiers photo ont été uploadés
+    if (!req.files || !req.files['doc']) {      
+
+      return res.status(400).json({ message: 'Aucun fichier photo uploadé' });
+    }
+
+    // Chemin local du fichier temporaire
+    const docFilePath = req.files['doc'][0].path;
+
+    // Upload de la photo sur Cloudinary de manière asynchrone
+    const docUpload = cloudinary.uploader.upload(docFilePath);
+
+    // Attendre que les uploads sur Cloudinary soient terminés
+    const [docUploadResult] = await Promise.all([docUpload]);
+
+    // Supprime le fichier temporaire après l'upload
+    fs.unlinkSync(docFilePath);
+
+    // Récupère l'URL de la photo sur Cloudinary
+    const docUrl = docUploadResult.secure_url;
+
+    // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
+    const user = await User.findOne({ token: req.body.token });
+
+    if (!user) {      
+
+      // L'utilisateur n'est pas trouvé, renvoyer une erreur ou une réponse appropriée
+      return res.status(404).json({ error: 'User not found' });
+
+    }
+
+    // Recherche de l'organisme associé à l'utilisateur
+    const organism = await Organism.findOne({ user: user._id });
+
+    if (organism) {
+
+      // Met à jour l'URL de l'image de l'organisme
+      await Organism.updateOne({ _id: organism._id }, { doc: docUrl });
+      console.log(docUrl)
+
+      // Renvoie une réponse avec le nom de l'organisme mis à jour
+      res.json({ result: true, docUrl: docUrl });
+    } else {
+
+      console.log('Organisme non trouvé');
+      res.json({ result: false, error: 'Organisme non trouvé' });
+    }
+  } catch (error) {
+    // Gérer les erreurs
+    console.error('Une erreur s\'est produite:', error);
+    res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
+  }
+});
+
+// Route pour l'enregistrement d'un organisme
 router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
   try {
     // Vérifie si les fichiers photo et doc ont été uploadés
@@ -148,6 +264,98 @@ router.post("/activityRegistration", async (req, res) => {
     res.status(200).json({ message: "Regular classes enregistrées avec succès" });
   } catch (error) {
     res.status(500).json({ message: "Une erreur s'est produite lors de l'enregistrement des regular classes" });
+  }
+});
+
+router.put("/updateActivity", async (req, res) => {
+  const { token, activityData, detailData } = req.body;
+
+  // console.log(req.body)
+
+  try {
+    const user = await User.findOne({ token: token });
+
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur introuvable" });
+    }
+
+    const organism = await Organism.findOne({ user: user._id }).populate('user');
+
+    if (!organism) {
+      return res.status(404).json({ message: "Organisme introuvable" });
+    }
+
+    const existingActivity = await RegularClass.findById(activityData.id);
+
+    if (!existingActivity) {
+      return res.status(404).json({ message: "Activité introuvable" });
+    }
+
+    // Mettez à jour les propriétés de l'activité
+    existingActivity.category = activityData.category;
+    existingActivity.activity = activityData.activity;
+    existingActivity.startAge = activityData.startAge;
+    existingActivity.endAge = activityData.endAge;
+    existingActivity.description = activityData.description;
+    existingActivity.visible = activityData.visible;
+
+    // Sauvegardez l'activité mise à jour
+    await existingActivity.save();
+
+    // Récupérez les ID des détails de la base de données
+    const existingDetailIds = existingActivity.regularClassesDetails.map(detail => detail.toString());
+    // // Récupérez les ID des détails du tableau B
+    const updatedDetailIds = detailData.map(detail => detail.data._id ? detail.data._id : null);
+
+    
+    // // Recherchez les détails à supprimer de la base de données (ceux qui sont dans A mais pas dans B)
+    const detailsToDelete = existingDetailIds.filter(id => !updatedDetailIds.includes(id));
+
+    // // Supprimez les détails de la base de données
+    for (const detailId of detailsToDelete) {
+      await RegularClassDetail.findByIdAndRemove(detailId);
+
+      existingActivity.regularClassesDetails = existingActivity.regularClassesDetails.filter(
+        (detail) => detail.toString() !== detailId
+      );
+    }
+
+    // // Mettez à jour ou ajoutez les détails à partir du tableau B
+    for (const updatedDetail of detailData) {
+      const existingDetail = await RegularClassDetail.findById(updatedDetail.data.id);
+
+      if (!existingDetail) {
+    //     // Créez le détail s'il n'existe pas encore
+        const newDetail = new RegularClassDetail(updatedDetail.data);
+        // newDetail.startTime = `${updatedDetail.startHours}:${updatedDetail.startMinutes}`;
+        const savedDetail = await newDetail.save();
+
+    //     // Ajoutez l'ID du nouveau détail à l'activité
+        existingActivity.regularClassesDetails.push(savedDetail._id);
+      } else {
+    //     // Mettez à jour les propriétés du détail existant
+        existingDetail.availability = updatedDetail.data.availability;
+        existingDetail.startAge = updatedDetail.data.startAge;
+        existingDetail.endAge = updatedDetail.data.endAge;
+        existingDetail.startHours = updatedDetail.data.startHours;
+        existingDetail.endHours = updatedDetail.data.endHours;
+        existingDetail.startMinutes = updatedDetail.data.startMinutes;
+        existingDetail.endMinutes = updatedDetail.data.endMinutes;
+        existingDetail.day = updatedDetail.data.day;
+        existingDetail.animator = updatedDetail.data.animator;
+
+    //     // Sauvegardez le détail mis à jour
+        await existingDetail.save();
+      }
+    }
+
+    // // Sauvegardez à nouveau l'activité pour refléter les modifications apportées aux détails
+    await existingActivity.save();
+
+    res.status(200).json({ message: "Activité mise à jour avec succès" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Une erreur s'est produite lors de la mise à jour de l'activité" });
   }
 });
 

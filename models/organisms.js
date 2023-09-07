@@ -33,7 +33,7 @@ const organismSchema = mongoose.Schema({
   doc:String,
   image:String,
   description:String,
-  visible:Boolean,
+  orgVisible:Boolean,
   
   rgpd:Boolean,
   valid:Boolean,
