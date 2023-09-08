@@ -306,7 +306,7 @@ router.put("/updateActivity", async (req, res) => {
     const existingDetailIds = existingActivity.regularClassesDetails.map(detail => detail.toString());
     // // Récupérez les ID des détails du tableau B
     const updatedDetailIds = detailData.map(detail => detail.data._id ? detail.data._id : null);
-
+    // console.log(updatedDetailIds)
     
     // // Recherchez les détails à supprimer de la base de données (ceux qui sont dans A mais pas dans B)
     const detailsToDelete = existingDetailIds.filter(id => !updatedDetailIds.includes(id));
@@ -322,7 +322,9 @@ router.put("/updateActivity", async (req, res) => {
 
     // // Mettez à jour ou ajoutez les détails à partir du tableau B
     for (const updatedDetail of detailData) {
-      const existingDetail = await RegularClassDetail.findById(updatedDetail.data.id);
+
+      const existingDetail = await RegularClassDetail.findById(updatedDetail.data._id);
+      console.log("1 "+existingDetail)
 
       if (!existingDetail) {
     //     // Créez le détail s'il n'existe pas encore
@@ -335,14 +337,16 @@ router.put("/updateActivity", async (req, res) => {
       } else {
     //     // Mettez à jour les propriétés du détail existant
         existingDetail.availability = updatedDetail.data.availability;
-        existingDetail.startAge = updatedDetail.data.startAge;
-        existingDetail.endAge = updatedDetail.data.endAge;
+        existingDetail.detailStartAge = updatedDetail.data.detailStartAge;
+        existingDetail.detailEndAge = updatedDetail.data.detailEndAge;
         existingDetail.startHours = updatedDetail.data.startHours;
         existingDetail.endHours = updatedDetail.data.endHours;
         existingDetail.startMinutes = updatedDetail.data.startMinutes;
         existingDetail.endMinutes = updatedDetail.data.endMinutes;
         existingDetail.day = updatedDetail.data.day;
         existingDetail.animator = updatedDetail.data.animator;
+
+        console.log("2 "+existingDetail)
 
     //     // Sauvegardez le détail mis à jour
         await existingDetail.save();
