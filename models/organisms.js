@@ -2,6 +2,8 @@
 
 const mongoose = require('mongoose');
 
+//////////////////////////////////////////////////////////////////////////////
+
 const locationSchema = mongoose.Schema({
     longitude: Number,
     latitude: Number,
@@ -10,6 +12,9 @@ const locationSchema = mongoose.Schema({
     postalCode: String,
     city: String
 });
+
+
+//////////////////////////////////////////////////////////////////////////////
 
 const organismSchema = mongoose.Schema({
   user: { 

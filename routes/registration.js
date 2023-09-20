@@ -36,11 +36,13 @@ const upload = multer({
   },
 });
 
+
+//oooooooooooooooooooooooo Enregistrement de l'image ooooooooooooooooooooooooooo
+
 // Route pour l'enregistrement d'un organisme
 router.post('/imageRegistration', upload.fields([{ name: 'image', maxCount: 1 }]), async (req, res) => {
   console.log(req.files)
   try {
-    // Vérifie si les fichiers photo ont été uploadés
     if (!req.files || !req.files['image']) {      
 
       return res.status(400).json({ message: 'Aucun fichier photo uploadé' });
@@ -65,13 +67,10 @@ router.post('/imageRegistration', upload.fields([{ name: 'image', maxCount: 1 }]
     const user = await User.findOne({ token: req.body.token });
 
     if (!user) {      
-
-      // L'utilisateur n'est pas trouvé, renvoyer une erreur ou une réponse appropriée
       return res.status(404).json({ error: 'User not found' });
 
     }
 
-    // Recherche de l'organisme associé à l'utilisateur
     const organism = await Organism.findOne({ user: user._id });
 
     if (organism) {
@@ -80,7 +79,6 @@ router.post('/imageRegistration', upload.fields([{ name: 'image', maxCount: 1 }]
       await Organism.updateOne({ _id: organism._id }, { image: photoUrl });
       console.log("photo url : "+photoUrl)
 
-      // Renvoie une réponse avec le nom de l'organisme mis à jour
       res.json({ result: true, photoUrl: photoUrl });
     } else {
 
@@ -94,10 +92,14 @@ router.post('/imageRegistration', upload.fields([{ name: 'image', maxCount: 1 }]
   }
 });
 
-// Route pour l'enregistrement d'un organisme
+
+
+//oooooooooooooooooooooooooo Enregistrement du pdf ooooooooooooooooooooooooooooo
+
 router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), async (req, res) => {
   console.log(req.files)
   try {
+
     // Vérifie si les fichiers photo ont été uploadés
     if (!req.files || !req.files['doc']) {      
 
@@ -124,12 +126,10 @@ router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), a
 
     if (!user) {      
 
-      // L'utilisateur n'est pas trouvé, renvoyer une erreur ou une réponse appropriée
       return res.status(404).json({ error: 'User not found' });
 
     }
 
-    // Recherche de l'organisme associé à l'utilisateur
     const organism = await Organism.findOne({ user: user._id });
 
     if (organism) {
@@ -146,13 +146,15 @@ router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), a
       res.json({ result: false, error: 'Organisme non trouvé' });
     }
   } catch (error) {
-    // Gérer les erreurs
     console.error('Une erreur s\'est produite:', error);
     res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
   }
 });
 
-// Route pour l'enregistrement d'un organisme
+
+//ooooooooooooooooooooo Enregistrement de l'organisme oooooooooooooooooooooooooo
+
+
 router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
   try {
     // Vérifie si les fichiers photo et doc ont été uploadés
@@ -184,7 +186,6 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
     const user = await User.findOne({ token: req.body.token });
     if (!user) {
-      // L'utilisateur n'est pas trouvé, renvoyer une erreur ou une réponse appropriée
       return res.status(404).json({ error: 'User not found' });
     }
 
@@ -200,7 +201,7 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
 if (lastOrganism) {
   newOrganism.orgNumber = lastOrganism.orgNumber + 1;
 } else {
-  // Aucun organisme trouvé dans la base de données, initialisez orgNumber à 1
+  // Aucun organisme trouvé dans la base de données, initialisation orgNumber à 1
   newOrganism.orgNumber = 1;
 }
 
@@ -214,20 +215,17 @@ if (lastOrganism) {
     // Enregistrer l'organisme dans la base de données
     const savedOrganism = await newOrganism.save();
 
-    // Ajouter la clé étrangère de l'organisme à la liste des organismes de l'utilisateur
-    // user.organisms.push(savedOrganism._id);
-
-    // Enregistrer les modifications de l'utilisateur dans la base de données
-    // await user.save();
-
     // Retourner la réponse avec les données de l'organisme nouvellement enregistré
     res.json({ result: savedOrganism.orgName });
   } catch (error) {
-    // Gérer les erreurs
     console.error('Une erreur s\'est produite:', error);
     res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
   }
 });
+
+
+
+//ooooooooooooooooooooo Enregistrement de l'activité oooooooooooooooooooooooo
 
 router.post("/activityRegistration", async (req, res) => {
   const { token, regularClass, regularClassesDetails } = req.body.dataActivity;
@@ -285,22 +283,18 @@ router.post("/activityRegistration", async (req, res) => {
   }
 });
 
+
+//oooooooooooooooooooooooo Mise à jour de l'activité ooooooooooooooooooooooooooo
+
+
 router.put("/updateActivity", async (req, res) => {
   const { token, activityData, detailData } = req.body;
-
-  // console.log("activité "+req.body.activityData._id)
-  // const activity = activityData;
-  // activity["regularClassesDetails"] = detailData;
-
-  // console.log("activité complete "+activity)
-  
 
   try {
     const user = await User.findOne({ token: token });
 
     if (!user) {
       return res.status(404).json({ message: "Utilisateur introuvable" });
-      
 
     }
 
@@ -334,7 +328,6 @@ router.put("/updateActivity", async (req, res) => {
     // // Récupérez les ID des détails du tableau B
 
     const updatedDetailIds = detailData.map(detail => detail.data._id ? detail.data._id : null);
-    // console.log(updatedDetailIds)
     
     // // Recherchez les détails à supprimer de la base de données (ceux qui sont dans A mais pas dans B)
     const detailsToDelete = existingDetailIds.filter(id => !updatedDetailIds.includes(id));
@@ -349,17 +342,13 @@ router.put("/updateActivity", async (req, res) => {
       );
     }
 
-    // // Mettez à jour ou ajoutez les détails à partir du tableau B
+    // // mise à jour ou ajout des créneaux
     for (const updatedDetail of detailData) {
 
-
       const existingDetail = await RegularClassDetail.findById(updatedDetail.data._id);
-      // console.log("1 "+existingDetail)
 
       if (!existingDetail) {
-    //     // Créez le détail s'il n'existe pas encore
         const newDetail = new RegularClassDetail(updatedDetail.data);
-        // newDetail.startTime = `${updatedDetail.startHours}:${updatedDetail.startMinutes}`;
         const savedDetail = await newDetail.save();
 
     //     // Ajoutez l'ID du nouveau détail à l'activité
@@ -376,20 +365,15 @@ router.put("/updateActivity", async (req, res) => {
         existingDetail.day = updatedDetail.data.day;
         existingDetail.animator = updatedDetail.data.animator;
 
-        // console.log("2 "+existingDetail)
 
-    //     // Sauvegardez le détail mis à jour
         await existingDetail.save();
       }
     }
 
-    // // Sauvegardez à nouveau l'activité pour refléter les modifications apportées aux détails
     await existingActivity.save();
 
     const activity = await RegularClass.findById(activityData._id)
     .populate("regularClassesDetails");
-
-    console.log("pomme "+activity)
 
     res.status(200).json({ result: "Activité mise à jour avec succès", updatedActivity: activity });
   } catch (error) {
@@ -401,119 +385,3 @@ router.put("/updateActivity", async (req, res) => {
 
 module.exports = router;
 
-
-//-----------------------------------------------------------------------------------------------
-
-// router.post('/uploadPdf', uploadPDF.single('doc'), (req, res) => {
-//     // Vérifie si un fichier a été uploadé
-//     if (!req.file) {
-//       return res.status(400).json({ message: 'Aucun fichier uploadé' });
-//     }
-  
-//     // Chemin local du fichier temporaire
-//     const filePath = req.file.path;
-  
-//     // Upload du fichier sur Cloudinary
-//     cloudinary.uploader.upload(filePath, { resource_type: 'raw' }, (error, result) => {
-//       // Supprime le fichier temporaire après l'upload
-//       fs.unlinkSync(filePath);
-  
-//       if (error) {
-//         console.error('Erreur lors de l\'upload du fichier sur Cloudinary:', error);
-//         return res.status(500).json({ message: 'Erreur lors de l\'upload du fichier' });
-//       }
-  
-//       // Récupère l'URL du fichier PDF sur Cloudinary
-//       const pdfUrl = result.secure_url;
-//       console.log(pdfUrl)
-  
-//       // Renvoie l'URL du fichier PDF dans la réponse
-//       res.json({ pdfUrl });
-//     });
-//   });
-
-// //-----------------------------------------------------------------------------------------------
-
-// router.post('/upload', upload.single('photo'), (req, res) => {
-
-//     // Vérifie si un fichier a été uploadé
-//     if (!req.file) {
-//       return res.status(400).json({ message: 'Aucun fichier uploadé' });
-//     }
-  
-//     // Chemin local du fichier temporaire
-//     const filePath = req.file.path;
-  
-//     // Upload du fichier sur Cloudinary
-//     cloudinary.uploader.upload(filePath, (error, result) => {
-//       // Supprime le fichier temporaire après l'upload
-//       fs.unlinkSync(filePath);
-  
-//       if (error) {
-//         console.error('Erreur lors de l\'upload du fichier sur Cloudinary:', error);
-//         return res.status(500).json({ message: 'Erreur lors de l\'upload du fichier' });
-//       }
-  
-//       // Récupère l'URL de l'image sur Cloudinary
-//       const imageUrl = result.secure_url;
-  
-//       // Renvoie l'URL de l'image dans la réponse
-//       res.json({ imageUrl });
-//     });
-//   });
-
-//   //-------------------------------------------------------------------------------------------
-
-//   router.post('/organismRegistration', (req, res) => {
-//     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
-//     User.findOne({ token: req.body.token }).then(user => {
-//       if (!user) {
-//         // L'utilisateur n'est pas trouvé, renvoyer une erreur ou une réponse appropriée
-//         return res.status(404).json({ error: 'User not found' });
-//       }
-  
-//       // Récupérer les données JSON depuis le corps de la requête
-//       console.log(req.body.orgData);
-  
-//       // Créer une nouvelle instance de l'objet Organism avec les données reçues
-//       const newOrganism = new Organism(req.body.orgData);
-  
-//       // Assigner la clé étrangère de l'utilisateur à l'organisme
-//       newOrganism.user = user._id;
-  
-//       // Enregistrer l'organisme dans la base de données
-//       newOrganism.save().then(savedOrganism => {
-//         // Ajouter la clé étrangère de l'organisme à la liste des organismes de l'utilisateur
-//         user.organisms.push(savedOrganism._id);
-  
-//         // Enregistrer les modifications de l'utilisateur dans la base de données
-//         user.save().then(() => {
-//           // Retourner la réponse avec les données de l'organisme nouvellement enregistré
-//           res.json({ result: savedOrganism.orgName });
-//         }).catch(error => {
-//           // Gérer les erreurs lors de l'enregistrement des modifications de l'utilisateur
-//           res.status(500).json({ error: 'An error occurred while saving the user' });
-//         });
-//       }).catch(error => {
-//         // Gérer les erreurs lors de l'enregistrement de l'organisme
-//         res.status(500).json({ error: 'An error occurred while saving the organism' });
-//       });
-//     }).catch(error => {
-//       // Gérer les erreurs lors de la recherche de l'utilisateur
-//       res.status(500).json({ error: 'An error occurred while searching for the user' });
-//     });
-//   });
-
-
-// module.exports = router;
-
-  // const storage = multer.diskStorage({
-  //   destination: function (req, file, cb) {
-  //     cb(null, 'uploads/'); // Spécifiez le répertoire de destination pour enregistrer les fichiers uploadés
-  //   },
-  //   filename: function (req, file, cb) {
-  //     cb(null, file.originalname); // Utilisez le nom de fichier d'origine pour enregistrer le fichier
-  //   }
-  // });
-  // const upload = multer({ storage: storage });
-  // const uploadPDF = multer({ dest: 'uploads/pdf' });

@@ -4,7 +4,9 @@ require('../models/connection');
 const Organism = require('../models/organisms');
 const User = require('../models/users');
 
-const RegularClassDetail = require('../models/regularClassesDetails');
+
+
+//------------- récupération des organismes pour affichage home ------------
 
 router.get('/allOrganisms', (req, res) => {
 
@@ -16,6 +18,7 @@ router.get('/allOrganisms', (req, res) => {
 });
 
 
+//------------------- Affichage d'un unique organisme ---------------------
 
 router.get("/:orgNumber", async (req, res) => {
   try {
@@ -27,7 +30,7 @@ router.get("/:orgNumber", async (req, res) => {
       path: 'regularClasses',
       populate: {
         path: 'regularClassesDetails',
-        model: 'regularClassesDetails', // Assurez-vous que c'est le bon nom de modèle pour RegularClassDetail
+        model: 'regularClassesDetails', 
       },
     });
 
@@ -42,6 +45,8 @@ router.get("/:orgNumber", async (req, res) => {
     res.status(500).json({ result: false, error: "Erreur lors de la récupération des données" });
   }
 });
+
+//-------------------- Données pour mise à jour organisme ----------------------
 
 router.post("/organismDisplayForUpdate", async (req, res) => {
   try {
@@ -80,6 +85,9 @@ router.post("/organismDisplayForUpdate", async (req, res) => {
   }
 })
 
+
+// -------------------- Mise à jour des cours -------------------------------
+
 router.post("/updateField", async (req, res) => {
   try {
 
@@ -103,7 +111,6 @@ router.post("/updateField", async (req, res) => {
 
       if (organism) {
         Organism.updateOne({ _id: organism._id }, { [field] : value }).then(() => {
-          // console.log(`Price updated for ${articleId}`);
       
         console.log("ok "+organism);
         res.json({ result: true, organism: organism });
@@ -122,42 +129,9 @@ router.post("/updateField", async (req, res) => {
   }
 })
 
-router.post("/organismDisplayForUpdate", async (req, res) => {
-  try {
-    // console.log(req.body.token);
 
-    const user = await User.findOne({
-      token: req.body.token,
-    });
 
-    if (user) {
-      const organism = await Organism.findOne({
-        user: user._id,
-      })
-      .populate({
-        path: 'regularClasses',
-        populate: {
-          path: 'regularClassesDetails',
-          model: 'regularClassesDetails'
-        },
-      });
-
-      if (organism) {
-        // console.log(organism);
-        res.json({ result: true, organism: organism });
-      } else {
-        console.log('Organisme non trouvé');
-        res.json({ result: false, error: 'Organisme non trouvé' });
-      }
-    } else {
-      console.log('Utilisateur non trouvé');
-      res.json({ result: false, error: 'Utilisateur non trouvé' });
-    }
-  } catch (error) {
-    console.error('Erreur lors de la récupération des données:', error);
-    res.status(500).json({ result: false, error: '????Erreur lors de la récupération des données' });
-  }
-})
+//------------- Récupération de l'organisme correspondant au login -------------
 
 router.post('/createdOrganism', async (req, res) => {
   try {
