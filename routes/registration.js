@@ -17,6 +17,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+
 // Configuration de Multer pour le stockage des fichiers
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -189,15 +190,19 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
 
     const lastOrganism = await Organism.findOne({}, {}, { sort: { orgNumber: -1 } });
 
-    console.log("orgNumber : "+lastOrganism.orgNumber)
-
     // Récupérer les données JSON depuis le corps de la requête
     const orgData = JSON.parse(req.body.orgData);
 
     // Créer une nouvelle instance de l'objet Organism avec les données reçues
     const newOrganism = new Organism(orgData);
 
-    newOrganism.orgNumber = lastOrganism.orgNumber+1;
+// Vérifier si lastOrganism est null
+if (lastOrganism) {
+  newOrganism.orgNumber = lastOrganism.orgNumber + 1;
+} else {
+  // Aucun organisme trouvé dans la base de données, initialisez orgNumber à 1
+  newOrganism.orgNumber = 1;
+}
 
     // Assigner la clé étrangère de l'utilisateur à l'organisme
     newOrganism.user = user._id;
@@ -226,24 +231,32 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
 
 router.post("/activityRegistration", async (req, res) => {
   const { token, regularClass, regularClassesDetails } = req.body.dataActivity;
-
+  console.log("essai1")
   try {
     const user = await User.findOne({ token: token });
+    console.log("essai2")
 
     if (!user) {
       return res.status(404).json({ message: "Utilisateur introuvable" });
+      console.log("essai3")
+
     }
 
     const organism = await Organism.findOne({ user: user._id }).populate('user');
+    console.log("essai4")
 
     if (!organism) {
       return res.status(404).json({ message: "Organisme introuvable" });
     }
 
     const newRegularClass = new RegularClass(regularClass);
+    console.log(newRegularClass)
+
     const savedRegularClass = await newRegularClass.save();
+    console.log("essai5")
 
     const savedRegularClassesDetails = await Promise.all(
+      
       regularClassesDetails.map(async (detail) => {
         const newRegularClassDetail = new RegularClassDetail(detail.data);
         newRegularClassDetail.startTime = `${detail.data.startHours}:${detail.data.startMinutes}`;
@@ -251,15 +264,20 @@ router.post("/activityRegistration", async (req, res) => {
         return savedRegularClassDetail._id;
       })
     );
+    console.log("essai6")
+
 
     savedRegularClass.regularClassesDetails = savedRegularClassesDetails;
+    console.log("essai7")
 
     // Enregistrez la RegularClass une seule fois
     await savedRegularClass.save();
+    console.log("essai8")
 
     // Ajoutez l'ID de la RegularClass à l'organisme
     organism.regularClasses.push(savedRegularClass._id);
     await organism.save();
+    console.log("essai9")
 
     res.status(200).json({ message: "Regular classes enregistrées avec succès" });
   } catch (error) {
@@ -270,24 +288,33 @@ router.post("/activityRegistration", async (req, res) => {
 router.put("/updateActivity", async (req, res) => {
   const { token, activityData, detailData } = req.body;
 
-  // console.log(req.body)
+  // console.log("activité "+req.body.activityData._id)
+  // const activity = activityData;
+  // activity["regularClassesDetails"] = detailData;
+
+  // console.log("activité complete "+activity)
+  
 
   try {
     const user = await User.findOne({ token: token });
 
     if (!user) {
       return res.status(404).json({ message: "Utilisateur introuvable" });
+      
+
     }
 
     const organism = await Organism.findOne({ user: user._id }).populate('user');
 
-    if (!organism) {
+    if (!organism) {     
+
       return res.status(404).json({ message: "Organisme introuvable" });
-    }
+}
 
-    const existingActivity = await RegularClass.findById(activityData.id);
+    const existingActivity = await RegularClass.findById(activityData._id);
 
-    if (!existingActivity) {
+    if (!existingActivity) {  
+
       return res.status(404).json({ message: "Activité introuvable" });
     }
 
@@ -305,6 +332,7 @@ router.put("/updateActivity", async (req, res) => {
     // Récupérez les ID des détails de la base de données
     const existingDetailIds = existingActivity.regularClassesDetails.map(detail => detail.toString());
     // // Récupérez les ID des détails du tableau B
+
     const updatedDetailIds = detailData.map(detail => detail.data._id ? detail.data._id : null);
     // console.log(updatedDetailIds)
     
@@ -313,6 +341,7 @@ router.put("/updateActivity", async (req, res) => {
 
     // // Supprimez les détails de la base de données
     for (const detailId of detailsToDelete) {
+
       await RegularClassDetail.findByIdAndRemove(detailId);
 
       existingActivity.regularClassesDetails = existingActivity.regularClassesDetails.filter(
@@ -323,8 +352,9 @@ router.put("/updateActivity", async (req, res) => {
     // // Mettez à jour ou ajoutez les détails à partir du tableau B
     for (const updatedDetail of detailData) {
 
+
       const existingDetail = await RegularClassDetail.findById(updatedDetail.data._id);
-      console.log("1 "+existingDetail)
+      // console.log("1 "+existingDetail)
 
       if (!existingDetail) {
     //     // Créez le détail s'il n'existe pas encore
@@ -346,7 +376,7 @@ router.put("/updateActivity", async (req, res) => {
         existingDetail.day = updatedDetail.data.day;
         existingDetail.animator = updatedDetail.data.animator;
 
-        console.log("2 "+existingDetail)
+        // console.log("2 "+existingDetail)
 
     //     // Sauvegardez le détail mis à jour
         await existingDetail.save();
@@ -356,7 +386,12 @@ router.put("/updateActivity", async (req, res) => {
     // // Sauvegardez à nouveau l'activité pour refléter les modifications apportées aux détails
     await existingActivity.save();
 
-    res.status(200).json({ message: "Activité mise à jour avec succès" });
+    const activity = await RegularClass.findById(activityData._id)
+    .populate("regularClassesDetails");
+
+    console.log("pomme "+activity)
+
+    res.status(200).json({ result: "Activité mise à jour avec succès", updatedActivity: activity });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Une erreur s'est produite lors de la mise à jour de l'activité" });

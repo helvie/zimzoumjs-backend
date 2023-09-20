@@ -25,7 +25,7 @@ router.post('/signup', (req, res) => {
       });
 
       newUser.save().then(newUser => {
-        res.json({ result: true, token: newUser.token });
+        res.json({ result: true, token: newUser.token, mail: newUser.email });
       });
     } else {
       // User already exists in database
@@ -35,7 +35,6 @@ router.post('/signup', (req, res) => {
 });
 
 router.post('/signin', (req, res) => {
-  // console.log(req.body.password)
 
   if (!checkBody(req.body, ['email', 'password'])) {
     res.json({ result: false, error: 'Missing or empty fields' });
@@ -46,12 +45,9 @@ router.post('/signin', (req, res) => {
     console.log("trouvé")
 
 
-    if (data && (req.body.password == data.password)) {
-      // console.log(req.body.password)
+    // if (data && (req.body.password == data.password)) {
 
-    // if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      // console.log("trouvé mais mauvais password")
-      console.log("essai : "+data)
+    if (data && bcrypt.compareSync(req.body.password, data.password)) {
 
       res.json({ result: true, token: data.token, mail:req.body.email });
     } else {

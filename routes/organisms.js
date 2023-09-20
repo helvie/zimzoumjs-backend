@@ -124,7 +124,7 @@ router.post("/updateField", async (req, res) => {
 
 router.post("/organismDisplayForUpdate", async (req, res) => {
   try {
-    console.log(req.body.token);
+    // console.log(req.body.token);
 
     const user = await User.findOne({
       token: req.body.token,
@@ -143,7 +143,7 @@ router.post("/organismDisplayForUpdate", async (req, res) => {
       });
 
       if (organism) {
-        console.log(organism);
+        // console.log(organism);
         res.json({ result: true, organism: organism });
       } else {
         console.log('Organisme non trouvé');
@@ -173,8 +173,10 @@ router.post('/createdOrganism', async (req, res) => {
       });
 
       if (organism) {
-        console.log(organism);
-        res.json({ result: true, organism: organism.orgName });
+        regularClass = organism.regularClasses ? true : false;
+        res.json({ result: true, organism: organism.orgName, regularClass:regularClass });
+      console.log("resultat regularClass :"+regularClass)
+      
       } else {
         console.log('Organisme non trouvé');
         res.json({ result: false, error: 'Organisme non trouvé' });
