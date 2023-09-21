@@ -50,7 +50,6 @@ router.get("/:orgNumber", async (req, res) => {
 
 router.post("/organismDisplayForUpdate", async (req, res) => {
   try {
-    console.log(req.body.token);
 
     const user = await User.findOne({
       token: req.body.token,

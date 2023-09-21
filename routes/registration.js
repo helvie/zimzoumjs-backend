@@ -305,6 +305,9 @@ router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), a
 // });
 
 router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
+  console.log("essai vercel")
+  
+  
   try {
     // Vérifier si les fichiers photo et doc ont été uploadés
     if (!req.files || !req.files['photo'] || !req.files['doc']) {
