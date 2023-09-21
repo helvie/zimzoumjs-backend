@@ -155,9 +155,78 @@ router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), a
 //ooooooooooooooooooooo Enregistrement de l'organisme oooooooooooooooooooooooooo
 
 
+// router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
+//   try {
+//     // Vérifie si les fichiers photo et doc ont été uploadés
+//     if (!req.files || !req.files['photo'] || !req.files['doc']) {
+//       return res.status(400).json({ message: 'Aucun fichier photo ou PDF uploadé' });
+//     }
+
+//     // Chemins locaux des fichiers temporaires
+//     const photoFilePath = req.files['photo'][0].path;
+//     const pdfFilePath = req.files['doc'][0].path;
+
+//     // Upload de la photo sur Cloudinary de manière asynchrone
+//     const photoUpload = cloudinary.uploader.upload(photoFilePath);
+//     // Upload du PDF sur Cloudinary de manière asynchrone
+//     const pdfUpload = cloudinary.uploader.upload(pdfFilePath, { resource_type: 'raw' });
+
+//     // Attendre que les uploads sur Cloudinary soient terminés
+//     const [photoUploadResult, pdfUploadResult] = await Promise.all([photoUpload, pdfUpload]);
+
+//     // Supprime les fichiers temporaires après l'upload
+//     fs.unlinkSync(photoFilePath);
+//     fs.unlinkSync(pdfFilePath);
+
+//     // Récupère l'URL de la photo sur Cloudinary
+//     const photoUrl = photoUploadResult.secure_url;
+//     // Récupère l'URL du PDF sur Cloudinary
+//     const pdfUrl = pdfUploadResult.secure_url;
+
+//     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
+//     const user = await User.findOne({ token: req.body.token });
+//     if (!user) {
+//       return res.status(404).json({ error: 'User not found' });
+//     }
+
+//     const lastOrganism = await Organism.findOne({}, {}, { sort: { orgNumber: -1 } });
+
+//     // Récupérer les données JSON depuis le corps de la requête
+//     // const orgData = JSON.parse(req.body.orgData);
+    
+
+//     // Créer une nouvelle instance de l'objet Organism avec les données reçues
+//     const newOrganism = new Organism(orgData);
+
+// // Vérifier si lastOrganism est null
+// if (lastOrganism) {
+//   newOrganism.orgNumber = lastOrganism.orgNumber + 1;
+// } else {
+//   // Aucun organisme trouvé dans la base de données, initialisation orgNumber à 1
+//   newOrganism.orgNumber = 1;
+// }
+
+//     // Assigner la clé étrangère de l'utilisateur à l'organisme
+//     newOrganism.user = user._id;
+
+//     // Assigner les URL de la photo et du PDF à l'organisme
+//     newOrganism.image = photoUrl;
+//     newOrganism.doc = pdfUrl;
+
+//     // Enregistrer l'organisme dans la base de données
+//     const savedOrganism = await newOrganism.save();
+
+//     // Retourner la réponse avec les données de l'organisme nouvellement enregistré
+//     res.json({ result: savedOrganism.orgName });
+//   } catch (error) {
+//     console.error('Une erreur s\'est produite:', error);
+//     res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
+//   }
+// });
+
 router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
   try {
-    // Vérifie si les fichiers photo et doc ont été uploadés
+    // Vérifier si les fichiers photo et doc ont été uploadés
     if (!req.files || !req.files['photo'] || !req.files['doc']) {
       return res.status(400).json({ message: 'Aucun fichier photo ou PDF uploadé' });
     }
@@ -192,25 +261,37 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
     const lastOrganism = await Organism.findOne({}, {}, { sort: { orgNumber: -1 } });
 
     // Récupérer les données JSON depuis le corps de la requête
-    const orgData = JSON.parse(req.body.orgData);
+    // const orgData = JSON.parse(req.body.orgData);
 
     // Créer une nouvelle instance de l'objet Organism avec les données reçues
-    const newOrganism = new Organism(orgData);
+    const newOrganism = new Organism({
+      organismSort: req.body.organismSort,
+      orgName: req.body.orgName,
+      location: JSON.parse(req.body.location), // Assurez-vous de bien convertir cette chaîne en objet JSON
+      emailPublic: req.body.emailPublic,
+      phonePublic: req.body.phonePublic,
+      website: req.body.website,
+      description: req.body.description,
+      orgVisible: req.body.orgVisible === 'true', // Convertit la chaîne en booléen
+      respCivility: req.body.respCivility,
+      respName: req.body.respName,
+      respNameDisplay: req.body.respNameDisplay,
+      phonePrivate: req.body.phonePrivate,
+      emailPrivate: req.body.emailPrivate,
+      image: photoUrl,
+      doc: pdfUrl,
+    });
 
-// Vérifier si lastOrganism est null
-if (lastOrganism) {
-  newOrganism.orgNumber = lastOrganism.orgNumber + 1;
-} else {
-  // Aucun organisme trouvé dans la base de données, initialisation orgNumber à 1
-  newOrganism.orgNumber = 1;
-}
+    // Vérifier si lastOrganism est null
+    if (lastOrganism) {
+      newOrganism.orgNumber = lastOrganism.orgNumber + 1;
+    } else {
+      // Aucun organisme trouvé dans la base de données, initialisation orgNumber à 1
+      newOrganism.orgNumber = 1;
+    }
 
     // Assigner la clé étrangère de l'utilisateur à l'organisme
     newOrganism.user = user._id;
-
-    // Assigner les URL de la photo et du PDF à l'organisme
-    newOrganism.image = photoUrl;
-    newOrganism.doc = pdfUrl;
 
     // Enregistrer l'organisme dans la base de données
     const savedOrganism = await newOrganism.save();
@@ -223,25 +304,19 @@ if (lastOrganism) {
   }
 });
 
-
-
 //ooooooooooooooooooooo Enregistrement de l'activité oooooooooooooooooooooooo
 
 router.post("/activityRegistration", async (req, res) => {
   const { token, regularClass, regularClassesDetails } = req.body.dataActivity;
-  console.log("essai1")
   try {
     const user = await User.findOne({ token: token });
-    console.log("essai2")
 
     if (!user) {
       return res.status(404).json({ message: "Utilisateur introuvable" });
-      console.log("essai3")
 
     }
 
     const organism = await Organism.findOne({ user: user._id }).populate('user');
-    console.log("essai4")
 
     if (!organism) {
       return res.status(404).json({ message: "Organisme introuvable" });
@@ -251,7 +326,6 @@ router.post("/activityRegistration", async (req, res) => {
     console.log(newRegularClass)
 
     const savedRegularClass = await newRegularClass.save();
-    console.log("essai5")
 
     const savedRegularClassesDetails = await Promise.all(
       
@@ -262,20 +336,16 @@ router.post("/activityRegistration", async (req, res) => {
         return savedRegularClassDetail._id;
       })
     );
-    console.log("essai6")
 
 
     savedRegularClass.regularClassesDetails = savedRegularClassesDetails;
-    console.log("essai7")
 
     // Enregistrez la RegularClass une seule fois
     await savedRegularClass.save();
-    console.log("essai8")
 
     // Ajoutez l'ID de la RegularClass à l'organisme
     organism.regularClasses.push(savedRegularClass._id);
     await organism.save();
-    console.log("essai9")
 
     res.status(200).json({ message: "Regular classes enregistrées avec succès" });
   } catch (error) {
