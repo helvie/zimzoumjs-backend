@@ -21,7 +21,8 @@ cloudinary.config({
 // Configuration de Multer pour le stockage des fichiers
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '/uploads/'));  },
+    cb(null, 'uploads/');
+  },
   filename: function (req, file, cb) {
     cb(null, file.originalname);
   },
@@ -180,8 +181,8 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
     const [photoUploadResult, pdfUploadResult] = await Promise.all([photoUpload, pdfUpload]);
 
     // Supprime les fichiers temporaires après l'upload
-    fs.unlinkSync(photoFilePath);
     fs.unlinkSync(pdfFilePath);
+    fs.unlinkSync(photoFilePath);
 
     // Récupère l'URL de la photo sur Cloudinary
     const photoUrl = photoUploadResult.secure_url;
