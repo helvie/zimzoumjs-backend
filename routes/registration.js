@@ -10,6 +10,7 @@ const fs = require('fs');
 const RegularClassDetail = require('../models/regularClassesDetails');
 const RegularClass = require('../models/regularClasses');
 const path = require('path');
+import streamifier from "streamifier";
 
 // Configuration de Cloudinary
 cloudinary.config({
@@ -20,20 +21,10 @@ cloudinary.config({
 
 
 
-const uploadDir = os.tmpdir();
+const uploadDir = tmpdir(); // Utilisation du répertoire temporaire du système d'exploitation
 
 // Configuration de Multer pour le stockage des fichiers
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname);
-  },
-});
-
-
-// Configuration de Multer pour la gestion des fichiers
+const storage = multer.memoryStorage(); // Stockage en mémoire
 const upload = multer({
   storage: storage,
   limits: {
@@ -236,71 +227,67 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
   const docFile = req.files.doc[0];
 
   try {
-    // Créez un répertoire temporaire s'il n'existe pas déjà
-    
-    // const uploadDir = path.join(__dirname, 'uploads'); // Choisir le chemin approprié
-    // if (!fs.existsSync(uploadDir)) {
-    //   fs.mkdirSync(uploadDir);
-    // }
+    const docResult = await cloudinary.uploader.upload_stream(
+      { folder: "demo" },
+      (error, result) => {
+        if (error) {
+          console.error(error);
+          return res.status(500).json({ error: "Une erreur s'est produite lors de l'envoi du fichier." });
+        }
+        const docUrl = result.secure_url;
 
-    // Définissez les chemins de fichiers temporaires
-    // const photoFilePath = path.join(uploadDir, photoFile.filename);
-// Définissez les chemins de fichiers temporaires
-const photoFilePath = req.files['photo'][0].path;
-const docFilePath = req.files['doc'][0].path;
+        const photoResult = await cloudinary.uploader.upload_stream(
+          { folder: "demo" },
+          (error, result) => {
+            if (error) {
+              console.error(error);
+              return res.status(500).json({ error: "Une erreur s'est produite lors de l'envoi du fichier." });
+            }
+            const photoUrl = result.secure_url;
 
-// Vérifiez si les fichiers existent avant de les renommer
-if (fs.existsSync(photoFilePath) && fs.existsSync(docFilePath)) {
-  // Déplacez les fichiers téléchargés vers le répertoire temporaire
-  fs.renameSync(photoFile.path, photoFilePath);
-  fs.renameSync(docFile.path, docFilePath);
-} else {
-  // Gérez l'erreur si les fichiers n'existent pas
-  console.error('Les fichiers temporaires n\'existent pas.');
-  res.status(500).json({ error: 'Une erreur s\'est produite lors du traitement des fichiers' });
-  return; // Arrêtez le traitement de la requête
-}
+            const user = await User.findOne({ token: "2TQScApBOfGByJnNPFjf3jXGToDfuAro" });
 
-    const docResult = await cloudinary.uploader.upload(docFilePath); // docFilePath est le chemin local du document
-    const docUrl = docResult.secure_url; // Récupérez l'URL de Cloudinary
-    const photoResult = await cloudinary.uploader.upload(photoFilePath); // docFilePath est le chemin local du document
-    const photoUrl = photoResult.secure_url; // Récupérez l'URL de Cloudinary
+            const newOrganism = new Organism({
+              respCivility: 'madame',
+              respName: 'Jolinet',
+              respNameDisplay: true,
+              phonePrivate: '0156568989',
+              emailPrivate: 'jolinet@sj.fr',
+              organismSort: 'mairie',
+              orgName: 'Service jeunesse',
+              location: {
+                longitude: 1.981233,
+                latitude: 46.943692,
+                route: '85 Rue des Alouettes',
+                postalCode: '36100',
+                city: 'Issoudun',
+              },
+              emailPublic: 'contact@sj.fr',
+              phonePublic: '0125365456',
+              website: 'www.servicesjeunesse.fr',
+              image: photoUrl,
+              doc: docUrl,
+              description: 'Une équipe d’animateurs propose aux jeunes de 12 à 20 ans des activités ludiques, sportives, culturelles et pédagogiques tout au long de l’année. Elle organise des séjours et des sorties le mercredi et pendant les vacances. Le service accompagne également les jeunes dans leurs recherches et leurs projets.',
+              orgVisible: true,
+              regularClasses: [],
+              orgNumber: 1,
+              user: user,
+              respRole: 'president'
+            });
 
-    const user = await User.findOne({ token: "2TQScApBOfGByJnNPFjf3jXGToDfuAro" });
+            // Enregistrer l'organisme dans la base de données
+            const savedOrganism = await newOrganism.save();
 
-    const newOrganism = new Organism({
-      respCivility: 'madame',
-      respName: 'Jolinet',
-      respNameDisplay: true,
-      phonePrivate: '0156568989',
-      emailPrivate: 'jolinet@sj.fr',
-      organismSort: 'mairie',
-      orgName: 'Service jeunesse',
-      location: {
-      longitude: 1.981233,
-      latitude: 46.943692,
-      route: '85 Rue des Alouettes',
-      postalCode: '36100',
-      city: 'Issoudun',
-    },
-      emailPublic: 'contact@sj.fr',
-      phonePublic: '0125365456',
-      website: 'www.servicesjeunesse.fr',
-      image: photoUrl,
-      doc: docUrl,      
-      description: 'Une équipe d’animateurs propose aux jeunes de 12 à 20 ans des activités ludiques, sportives, culturelles et pédagogiques tout au long de l’année. Elle organise des séjours et des sorties le mercredi et pendant les vacances. Le service accompagne également les jeunes dans leurs recherches et leurs projets.',
-      orgVisible: true,
-      regularClasses: [],
-      orgNumber: 1,
-      user: user,
-      respRole: 'president'
-    })
+            // Retourner la réponse avec les données de l'organisme nouvellement enregistré
+            res.json({ result: savedOrganism.orgName });
+          }
+        );
 
-    // Enregistrer l'organisme dans la base de données
-    const savedOrganism = await newOrganism.save();
+        streamifier.createReadStream(photoFile.buffer).pipe(photoResult);
+      }
+    );
 
-    // Retourner la réponse avec les données de l'organisme nouvellement enregistré
-    res.json({ result: savedOrganism.orgName });
+    streamifier.createReadStream(docFile.buffer).pipe(docResult);
   } catch (error) {
     console.error('Une erreur s\'est produite:', error);
     res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
