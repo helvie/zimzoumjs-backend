@@ -233,14 +233,18 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
 
   try {
     // Créez un répertoire temporaire s'il n'existe pas déjà
-    const uploadDir = path.join(__dirname, 'uploads'); // Choisir le chemin approprié
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
-    }
+    
+    // const uploadDir = path.join(__dirname, 'uploads'); // Choisir le chemin approprié
+    // if (!fs.existsSync(uploadDir)) {
+    //   fs.mkdirSync(uploadDir);
+    // }
 
     // Définissez les chemins de fichiers temporaires
-    const photoFilePath = path.join(uploadDir, photoFile.filename);
-    const docFilePath = path.join(uploadDir, docFile.filename);
+    // const photoFilePath = path.join(uploadDir, photoFile.filename);
+    const photoFilePath = req.files['photo'][0].path;
+    const docFilePath = req.files['doc'][0].path;
+
+    // const docFilePath = path.join(uploadDir, docFile.filename);
     
 
     // Déplacez les fichiers téléchargés vers le répertoire temporaire
