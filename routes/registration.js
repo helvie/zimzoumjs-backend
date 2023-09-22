@@ -235,8 +235,8 @@ if (lastOrganism) {
     orgData.user = user._id;
 
     // Assigner les URL de la photo et du PDF à l'organisme
-    orgData.image = photoUrl;
-    orgData.doc = pdfUrl;
+    // orgData.image = photoUrl;
+    // orgData.doc = pdfUrl;
 
 
     // Créer une nouvelle instance de l'objet Organism avec les données reçues
