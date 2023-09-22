@@ -1,16 +1,12 @@
 const express = require('express');
 const router = express.Router();
-
 const User = require('../models/users');
 require('../models/connection');
 const Organism = require('../models/organisms');
-const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
-const fs = require('fs');
-const RegularClassDetail = require('../models/regularClassesDetails');
-const RegularClass = require('../models/regularClasses');
+const streamifier = require('streamifier'); // Importez streamifier
+const multer = require('multer');
 const path = require('path');
-import streamifier from "streamifier";
 
 // Configuration de Cloudinary
 cloudinary.config({
@@ -18,10 +14,6 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
-
-
-const uploadDir = tmpdir(); // Utilisation du répertoire temporaire du système d'exploitation
 
 // Configuration de Multer pour le stockage des fichiers
 const storage = multer.memoryStorage(); // Stockage en mémoire
@@ -32,6 +24,77 @@ const upload = multer({
   },
 });
 
+router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
+  const photoFile = req.files.photo[0];
+  const docFile = req.files.doc[0];
+
+  try {
+    const docResult = await new Promise((resolve, reject) => {
+      const docStream = streamifier.createReadStream(docFile.buffer);
+      docStream.pipe(
+        cloudinary.uploader.upload_stream({ folder: "demo" }, (error, result) => {
+          if (error) {
+            console.error(error);
+            return reject(error);
+          }
+          resolve(result.secure_url);
+        })
+      );
+    });
+
+    const photoResult = await new Promise((resolve, reject) => {
+      const photoStream = streamifier.createReadStream(photoFile.buffer);
+      photoStream.pipe(
+        cloudinary.uploader.upload_stream({ folder: "demo" }, (error, result) => {
+          if (error) {
+            console.error(error);
+            return reject(error);
+          }
+          resolve(result.secure_url);
+        })
+      );
+    });
+
+    const user = await User.findOne({ token: "2TQScApBOfGByJnNPFjf3jXGToDfuAro" });
+
+    const newOrganism = new Organism({
+      respCivility: 'madame',
+      respName: 'Jolinet',
+      respNameDisplay: true,
+      phonePrivate: '0156568989',
+      emailPrivate: 'jolinet@sj.fr',
+      organismSort: 'mairie',
+      orgName: 'Service jeunesse',
+      location: {
+        longitude: 1.981233,
+        latitude: 46.943692,
+        route: '85 Rue des Alouettes',
+        postalCode: '36100',
+        city: 'Issoudun',
+      },
+      emailPublic: 'contact@sj.fr',
+      phonePublic: '0125365456',
+      website: 'www.servicesjeunesse.fr',
+      image: photoResult,
+      doc: docResult,
+      description: 'Une équipe d’animateurs propose aux jeunes de 12 à 20 ans des activités ludiques, sportives, culturelles et pédagogiques tout au long de l’année. Elle organise des séjours et des sorties le mercredi et pendant les vacances. Le service accompagne également les jeunes dans leurs recherches et leurs projets.',
+      orgVisible: true,
+      regularClasses: [],
+      orgNumber: 1,
+      user: user,
+      respRole: 'president'
+    });
+
+    // Enregistrer l'organisme dans la base de données
+    const savedOrganism = await newOrganism.save();
+
+    // Retourner la réponse avec les données de l'organisme nouvellement enregistré
+    res.json({ result: savedOrganism.orgName });
+  } catch (error) {
+    console.error('Une erreur s\'est produite:', error);
+    res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
+  }
+});
 
 //oooooooooooooooooooooooo Enregistrement de l'image ooooooooooooooooooooooooooo
 
@@ -146,155 +209,6 @@ router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), a
     res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
   }
 });
-
-
-//ooooooooooooooooooooo Enregistrement de l'organisme oooooooooooooooooooooooooo
-
-
-// router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
-//   console.log(req.files)
-//   try {
-//     // Vérifie si les fichiers photo et doc ont été uploadés
-//     if (!req.files || !req.files['photo'] || !req.files['doc']) {
-//       return res.status(400).json({ message: 'Aucun fichier photo ou PDF uploadé' });
-//     }
-
-//     // Chemins locaux des fichiers temporaires
-//     const photoFilePath = req.files['photo'][0].path;
-//     const pdfFilePath = req.files['doc'][0].path;
-
-//     // Upload de la photo sur Cloudinary de manière asynchrone
-//     const photoUpload = cloudinary.uploader.upload(photoFilePath);
-//     // Upload du PDF sur Cloudinary de manière asynchrone
-//     const pdfUpload = cloudinary.uploader.upload(pdfFilePath, { resource_type: 'raw' });
-
-//     // Attendre que les uploads sur Cloudinary soient terminés
-//     const [photoUploadResult, pdfUploadResult] = await Promise.all([photoUpload, pdfUpload]);
-
-//     // Supprime les fichiers temporaires après l'upload
-//     fs.unlinkSync(photoFilePath);
-//     fs.unlinkSync(pdfFilePath);
-
-//     // Récupère l'URL de la photo sur Cloudinary
-//     const photoUrl = photoUploadResult.secure_url;
-//     // Récupère l'URL du PDF sur Cloudinary
-//     const pdfUrl = pdfUploadResult.secure_url;
-
-//     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
-//     const user = await User.findOne({ token: req.body.token });
-//     if (!user) {
-//       return res.status(404).json({ error: 'User not found' });
-//     }
-
-//     const lastOrganism = await Organism.findOne({}, {}, { sort: { orgNumber: -1 } });
-
-//     // Récupérer les données JSON depuis le corps de la requête
-//     const orgData = JSON.parse(req.body.orgData);
-
-//     // Créer une nouvelle instance de l'objet Organism avec les données reçues
-//     const newOrganism = new Organism(orgData);
-
-// // Vérifier si lastOrganism est null
-// if (lastOrganism) {
-//   newOrganism.orgNumber = lastOrganism.orgNumber + 1;
-// } else {
-//   // Aucun organisme trouvé dans la base de données, initialisation orgNumber à 1
-//   newOrganism.orgNumber = 1;
-// }
-
-//     // Assigner la clé étrangère de l'utilisateur à l'organisme
-//     newOrganism.user = user._id;
-
-//     // Assigner les URL de la photo et du PDF à l'organisme
-//     newOrganism.image = photoUrl;
-//     newOrganism.doc = pdfUrl;
-
-//     // Enregistrer l'organisme dans la base de données
-//     const savedOrganism = await newOrganism.save();
-
-//     // Retourner la réponse avec les données de l'organisme nouvellement enregistré
-//     res.json({ result: savedOrganism.orgName });
-//   } catch (error) {
-//     console.error('Une erreur s\'est produite:', error);
-//     res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
-//   }
-// });
-
-// const fs = require('fs');
-
-router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
-  const photoFile = req.files.photo[0];
-  const docFile = req.files.doc[0];
-
-  try {
-    const docResult = await cloudinary.uploader.upload_stream(
-      { folder: "demo" },
-      (error, result) => {
-        if (error) {
-          console.error(error);
-          return res.status(500).json({ error: "Une erreur s'est produite lors de l'envoi du fichier." });
-        }
-        const docUrl = result.secure_url;
-
-        const photoResult = await cloudinary.uploader.upload_stream(
-          { folder: "demo" },
-          (error, result) => {
-            if (error) {
-              console.error(error);
-              return res.status(500).json({ error: "Une erreur s'est produite lors de l'envoi du fichier." });
-            }
-            const photoUrl = result.secure_url;
-
-            const user = await User.findOne({ token: "2TQScApBOfGByJnNPFjf3jXGToDfuAro" });
-
-            const newOrganism = new Organism({
-              respCivility: 'madame',
-              respName: 'Jolinet',
-              respNameDisplay: true,
-              phonePrivate: '0156568989',
-              emailPrivate: 'jolinet@sj.fr',
-              organismSort: 'mairie',
-              orgName: 'Service jeunesse',
-              location: {
-                longitude: 1.981233,
-                latitude: 46.943692,
-                route: '85 Rue des Alouettes',
-                postalCode: '36100',
-                city: 'Issoudun',
-              },
-              emailPublic: 'contact@sj.fr',
-              phonePublic: '0125365456',
-              website: 'www.servicesjeunesse.fr',
-              image: photoUrl,
-              doc: docUrl,
-              description: 'Une équipe d’animateurs propose aux jeunes de 12 à 20 ans des activités ludiques, sportives, culturelles et pédagogiques tout au long de l’année. Elle organise des séjours et des sorties le mercredi et pendant les vacances. Le service accompagne également les jeunes dans leurs recherches et leurs projets.',
-              orgVisible: true,
-              regularClasses: [],
-              orgNumber: 1,
-              user: user,
-              respRole: 'president'
-            });
-
-            // Enregistrer l'organisme dans la base de données
-            const savedOrganism = await newOrganism.save();
-
-            // Retourner la réponse avec les données de l'organisme nouvellement enregistré
-            res.json({ result: savedOrganism.orgName });
-          }
-        );
-
-        streamifier.createReadStream(photoFile.buffer).pipe(photoResult);
-      }
-    );
-
-    streamifier.createReadStream(docFile.buffer).pipe(docResult);
-  } catch (error) {
-    console.error('Une erreur s\'est produite:', error);
-    res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
-  }
-});
-
-
 //ooooooooooooooooooooo Enregistrement de l'activité oooooooooooooooooooooooo
 
 router.post("/activityRegistration", async (req, res) => {
@@ -509,3 +423,77 @@ module.exports = router;
     //     // Assigner les URL de la photo et du PDF à l'organisme
     //     newOrganism.image = photoUrl;
     //     newOrganism.doc = pdfUrl;
+
+//ooooooooooooooooooooo Enregistrement de l'organisme oooooooooooooooooooooooooo
+
+
+// router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
+//   console.log(req.files)
+//   try {
+//     // Vérifie si les fichiers photo et doc ont été uploadés
+//     if (!req.files || !req.files['photo'] || !req.files['doc']) {
+//       return res.status(400).json({ message: 'Aucun fichier photo ou PDF uploadé' });
+//     }
+
+//     // Chemins locaux des fichiers temporaires
+//     const photoFilePath = req.files['photo'][0].path;
+//     const pdfFilePath = req.files['doc'][0].path;
+
+//     // Upload de la photo sur Cloudinary de manière asynchrone
+//     const photoUpload = cloudinary.uploader.upload(photoFilePath);
+//     // Upload du PDF sur Cloudinary de manière asynchrone
+//     const pdfUpload = cloudinary.uploader.upload(pdfFilePath, { resource_type: 'raw' });
+
+//     // Attendre que les uploads sur Cloudinary soient terminés
+//     const [photoUploadResult, pdfUploadResult] = await Promise.all([photoUpload, pdfUpload]);
+
+//     // Supprime les fichiers temporaires après l'upload
+//     fs.unlinkSync(photoFilePath);
+//     fs.unlinkSync(pdfFilePath);
+
+//     // Récupère l'URL de la photo sur Cloudinary
+//     const photoUrl = photoUploadResult.secure_url;
+//     // Récupère l'URL du PDF sur Cloudinary
+//     const pdfUrl = pdfUploadResult.secure_url;
+
+//     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
+//     const user = await User.findOne({ token: req.body.token });
+//     if (!user) {
+//       return res.status(404).json({ error: 'User not found' });
+//     }
+
+//     const lastOrganism = await Organism.findOne({}, {}, { sort: { orgNumber: -1 } });
+
+//     // Récupérer les données JSON depuis le corps de la requête
+//     const orgData = JSON.parse(req.body.orgData);
+
+//     // Créer une nouvelle instance de l'objet Organism avec les données reçues
+//     const newOrganism = new Organism(orgData);
+
+// // Vérifier si lastOrganism est null
+// if (lastOrganism) {
+//   newOrganism.orgNumber = lastOrganism.orgNumber + 1;
+// } else {
+//   // Aucun organisme trouvé dans la base de données, initialisation orgNumber à 1
+//   newOrganism.orgNumber = 1;
+// }
+
+//     // Assigner la clé étrangère de l'utilisateur à l'organisme
+//     newOrganism.user = user._id;
+
+//     // Assigner les URL de la photo et du PDF à l'organisme
+//     newOrganism.image = photoUrl;
+//     newOrganism.doc = pdfUrl;
+
+//     // Enregistrer l'organisme dans la base de données
+//     const savedOrganism = await newOrganism.save();
+
+//     // Retourner la réponse avec les données de l'organisme nouvellement enregistré
+//     res.json({ result: savedOrganism.orgName });
+//   } catch (error) {
+//     console.error('Une erreur s\'est produite:', error);
+//     res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
+//   }
+// });
+
+// const fs = require('fs');
