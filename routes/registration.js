@@ -9,6 +9,7 @@ const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const RegularClassDetail = require('../models/regularClassesDetails');
 const RegularClass = require('../models/regularClasses');
+const path = require('path');
 
 // Configuration de Cloudinary
 cloudinary.config({
@@ -32,7 +33,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // Limite de taille maximale en octets (ici, 10 Mo)
+    fileSize: 50 * 1024 * 1024, // Limite de taille maximale en octets (ici, 50 Mo)
   },
 });
 
@@ -224,10 +225,34 @@ router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), a
 //   }
 // });
 
-router.post('/organismRegistration', async (req, res) => {
-  try {
+// const fs = require('fs');
 
-            const user = await User.findOne({ token: "2TQScApBOfGByJnNPFjf3jXGToDfuAro" });
+router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
+  const photoFile = req.files.photo[0];
+  const docFile = req.files.doc[0];
+
+  try {
+    // Créez un répertoire temporaire s'il n'existe pas déjà
+    const uploadDir = path.join(__dirname, 'uploads'); // Choisir le chemin approprié
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir);
+    }
+
+    // Définissez les chemins de fichiers temporaires
+    const photoFilePath = path.join(uploadDir, photoFile.filename);
+    const docFilePath = path.join(uploadDir, docFile.filename);
+    
+
+    // Déplacez les fichiers téléchargés vers le répertoire temporaire
+    fs.renameSync(photoFile.path, photoFilePath);
+    fs.renameSync(docFile.path, docFilePath);
+
+    const docResult = await cloudinary.uploader.upload(docFilePath); // docFilePath est le chemin local du document
+    const docUrl = docResult.secure_url; // Récupérez l'URL de Cloudinary
+    const photoResult = await cloudinary.uploader.upload(photoFilePath); // docFilePath est le chemin local du document
+    const photoUrl = photoResult.secure_url; // Récupérez l'URL de Cloudinary
+
+    const user = await User.findOne({ token: "2TQScApBOfGByJnNPFjf3jXGToDfuAro" });
 
     const newOrganism = new Organism({
       respCivility: 'madame',
@@ -247,8 +272,8 @@ router.post('/organismRegistration', async (req, res) => {
       emailPublic: 'contact@sj.fr',
       phonePublic: '0125365456',
       website: 'www.servicesjeunesse.fr',
-      doc: 'https://res.cloudinary.com/durcpgijy/raw/upload/v1694453566/ikcf8z8ayr59du3ibd8n.pdf',
-      image: 'https://res.cloudinary.com/durcpgijy/image/upload/v1694472533/xvtt4wrem2ksp8ouqcub.jpg',
+      image: photoUrl,
+      doc: docUrl,      
       description: 'Une équipe d’animateurs propose aux jeunes de 12 à 20 ans des activités ludiques, sportives, culturelles et pédagogiques tout au long de l’année. Elle organise des séjours et des sorties le mercredi et pendant les vacances. Le service accompagne également les jeunes dans leurs recherches et leurs projets.',
       orgVisible: true,
       regularClasses: [],
@@ -256,60 +281,6 @@ router.post('/organismRegistration', async (req, res) => {
       user: user,
       respRole: 'president'
     })
-    // Vérifie si les fichiers photo et doc ont été uploadés
-    //     if (!req.files || !req.files['photo'] || !req.files['doc']) {
-    //       return res.status(400).json({ message: 'Aucun fichier photo ou PDF uploadé' });
-    //     }
-
-    //     // Chemins locaux des fichiers temporaires
-    //     const photoFilePath = req.files['photo'][0].path;
-    //     const pdfFilePath = req.files['doc'][0].path;
-
-    //     // Upload de la photo sur Cloudinary de manière asynchrone
-    //     const photoUpload = cloudinary.uploader.upload(photoFilePath);
-    //     // Upload du PDF sur Cloudinary de manière asynchrone
-    //     const pdfUpload = cloudinary.uploader.upload(pdfFilePath, { resource_type: 'raw' });
-
-    //     // Attendre que les uploads sur Cloudinary soient terminés
-    //     const [photoUploadResult, pdfUploadResult] = await Promise.all([photoUpload, pdfUpload]);
-
-    //     // Supprime les fichiers temporaires après l'upload
-    //     fs.unlinkSync(photoFilePath);
-    //     fs.unlinkSync(pdfFilePath);
-
-    //     // Récupère l'URL de la photo sur Cloudinary
-    //     const photoUrl = photoUploadResult.secure_url;
-    //     // Récupère l'URL du PDF sur Cloudinary
-    //     const pdfUrl = pdfUploadResult.secure_url;
-
-    //     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
-    //     const user = await User.findOne({ token: req.body.token });
-    //     if (!user) {
-    //       return res.status(404).json({ error: 'User not found' });
-    //     }
-
-    //     const lastOrganism = await Organism.findOne({}, {}, { sort: { orgNumber: -1 } });
-
-    //     // Récupérer les données JSON depuis le corps de la requête
-    //     const orgData = JSON.parse(req.body.orgData);
-
-    //     // Créer une nouvelle instance de l'objet Organism avec les données reçues
-    //     const newOrganism = new Organism(orgData);
-
-    // // Vérifier si lastOrganism est null
-    // if (lastOrganism) {
-    //   newOrganism.orgNumber = lastOrganism.orgNumber + 1;
-    // } else {
-    //   // Aucun organisme trouvé dans la base de données, initialisation orgNumber à 1
-    //   newOrganism.orgNumber = 1;
-    // }
-
-    //     // Assigner la clé étrangère de l'utilisateur à l'organisme
-    //     newOrganism.user = user._id;
-
-    //     // Assigner les URL de la photo et du PDF à l'organisme
-    //     newOrganism.image = photoUrl;
-    //     newOrganism.doc = pdfUrl;
 
     // Enregistrer l'organisme dans la base de données
     const savedOrganism = await newOrganism.save();
@@ -483,3 +454,57 @@ router.put("/updateActivity", async (req, res) => {
 
 module.exports = router;
 
+    // Vérifie si les fichiers photo et doc ont été uploadés
+    //     if (!req.files || !req.files['photo'] || !req.files['doc']) {
+    //       return res.status(400).json({ message: 'Aucun fichier photo ou PDF uploadé' });
+    //     }
+
+    //     // Chemins locaux des fichiers temporaires
+    //     const photoFilePath = req.files['photo'][0].path;
+    //     const pdfFilePath = req.files['doc'][0].path;
+
+    //     // Upload de la photo sur Cloudinary de manière asynchrone
+    //     const photoUpload = cloudinary.uploader.upload(photoFilePath);
+    //     // Upload du PDF sur Cloudinary de manière asynchrone
+    //     const pdfUpload = cloudinary.uploader.upload(pdfFilePath, { resource_type: 'raw' });
+
+    //     // Attendre que les uploads sur Cloudinary soient terminés
+    //     const [photoUploadResult, pdfUploadResult] = await Promise.all([photoUpload, pdfUpload]);
+
+    //     // Supprime les fichiers temporaires après l'upload
+    //     fs.unlinkSync(photoFilePath);
+    //     fs.unlinkSync(pdfFilePath);
+
+    //     // Récupère l'URL de la photo sur Cloudinary
+    //     const photoUrl = photoUploadResult.secure_url;
+    //     // Récupère l'URL du PDF sur Cloudinary
+    //     const pdfUrl = pdfUploadResult.secure_url;
+
+    //     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
+    //     const user = await User.findOne({ token: req.body.token });
+    //     if (!user) {
+    //       return res.status(404).json({ error: 'User not found' });
+    //     }
+
+    //     const lastOrganism = await Organism.findOne({}, {}, { sort: { orgNumber: -1 } });
+
+    //     // Récupérer les données JSON depuis le corps de la requête
+    //     const orgData = JSON.parse(req.body.orgData);
+
+    //     // Créer une nouvelle instance de l'objet Organism avec les données reçues
+    //     const newOrganism = new Organism(orgData);
+
+    // // Vérifier si lastOrganism est null
+    // if (lastOrganism) {
+    //   newOrganism.orgNumber = lastOrganism.orgNumber + 1;
+    // } else {
+    //   // Aucun organisme trouvé dans la base de données, initialisation orgNumber à 1
+    //   newOrganism.orgNumber = 1;
+    // }
+
+    //     // Assigner la clé étrangère de l'utilisateur à l'organisme
+    //     newOrganism.user = user._id;
+
+    //     // Assigner les URL de la photo et du PDF à l'organisme
+    //     newOrganism.image = photoUrl;
+    //     newOrganism.doc = pdfUrl;
