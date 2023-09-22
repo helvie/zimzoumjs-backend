@@ -54,12 +54,13 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
         })
       );
     });
-
+    const dataToSend = JSON.parse(req.body.dataToSend);
+    console.log(dataToSend);
     const user = await User.findOne({ token: "2TQScApBOfGByJnNPFjf3jXGToDfuAro" });
 
     const newOrganism = new Organism({
-      respCivility: 'madame',
-      respName: 'Jolinet',
+      respCivility: dataToSend.respCivility,
+      respName: dataToSend.respName,
       respNameDisplay: true,
       phonePrivate: '0156568989',
       emailPrivate: 'jolinet@sj.fr',
