@@ -20,16 +20,11 @@ cloudinary.config({
 
 
 
+const uploadDir = os.tmpdir();
+
 // Configuration de Multer pour le stockage des fichiers
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, 'uploads');
-    
-    // Vérifiez si le dossier "uploads" existe, sinon créez-le
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
-    }
-
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
