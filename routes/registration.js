@@ -19,6 +19,7 @@ cloudinary.config({
 });
 
 
+
 // Configuration de Multer pour le stockage des fichiers
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
