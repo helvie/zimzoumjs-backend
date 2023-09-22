@@ -174,14 +174,11 @@ async function uploadToCloudinary(fileBuffer, folderName) {
 
 // router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
   router.post('/organismRegistration', (req, res) => { 
-    console.log(req.body)
 try {
 
-    // console.log(req.body)
       // Récupérer les données JSON depuis le corps de la requête
       const orgData = req.body.orgData;    
       const token =  req.body.token; 
-      console.log(orgData+" "+token)
    
 
     // Vérifie si les fichiers photo et doc ont été uploadés
