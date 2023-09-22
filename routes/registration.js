@@ -37,6 +37,7 @@ const storage = multer.diskStorage({
   },
 });
 
+
 // Configuration de Multer pour la gestion des fichiers
 const upload = multer({
   storage: storage,
