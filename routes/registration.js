@@ -241,15 +241,21 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
 
     // Définissez les chemins de fichiers temporaires
     // const photoFilePath = path.join(uploadDir, photoFile.filename);
-    const photoFilePath = req.files['photo'][0].path;
-    const docFilePath = req.files['doc'][0].path;
+// Définissez les chemins de fichiers temporaires
+const photoFilePath = req.files['photo'][0].path;
+const docFilePath = req.files['doc'][0].path;
 
-    // const docFilePath = path.join(uploadDir, docFile.filename);
-    
-
-    // Déplacez les fichiers téléchargés vers le répertoire temporaire
-    fs.renameSync(photoFile.path, photoFilePath);
-    fs.renameSync(docFile.path, docFilePath);
+// Vérifiez si les fichiers existent avant de les renommer
+if (fs.existsSync(photoFilePath) && fs.existsSync(docFilePath)) {
+  // Déplacez les fichiers téléchargés vers le répertoire temporaire
+  fs.renameSync(photoFile.path, photoFilePath);
+  fs.renameSync(docFile.path, docFilePath);
+} else {
+  // Gérez l'erreur si les fichiers n'existent pas
+  console.error('Les fichiers temporaires n\'existent pas.');
+  res.status(500).json({ error: 'Une erreur s\'est produite lors du traitement des fichiers' });
+  return; // Arrêtez le traitement de la requête
+}
 
     const docResult = await cloudinary.uploader.upload(docFilePath); // docFilePath est le chemin local du document
     const docUrl = docResult.secure_url; // Récupérez l'URL de Cloudinary
