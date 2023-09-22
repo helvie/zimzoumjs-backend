@@ -173,7 +173,7 @@ async function uploadToCloudinary(fileBuffer, folderName) {
 
 
 // router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
-  router.post('/organismRegistration', async (req, res) => { 
+  router.post('/organismRegistration', (req, res) => { 
     console.log(req.body)
 try {
 
@@ -217,12 +217,12 @@ try {
     // const pdfUrl = pdfUploadResult.secure_url;
 
     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
-    const user = await User.findOne({ token: token });
+    const user = User.findOne({ token: token });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const lastOrganism = await Organism.findOne({}, {}, { sort: { orgNumber: -1 } });
+    const lastOrganism = Organism.findOne({}, {}, { sort: { orgNumber: -1 } });
 
 
 
@@ -246,7 +246,7 @@ if (lastOrganism) {
     const newOrganism = new Organism(orgData);
 
     // Enregistrer l'organisme dans la base de données
-    const savedOrganism = await newOrganism.save();
+    const savedOrganism = newOrganism.save();
 
     // Retourner la réponse avec les données de l'organisme nouvellement enregistré
     res.json({ success:true, result: savedOrganism.orgName });
