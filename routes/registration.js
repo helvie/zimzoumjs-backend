@@ -57,116 +57,116 @@ async function uploadToCloudinary(fileBuffer, folderName) {
 //oooooooooooooooooooooooo Enregistrement de l'image ooooooooooooooooooooooooooo
 
 // Route pour l'enregistrement d'un organisme
-router.post('/imageRegistration', upload.fields([{ name: 'image', maxCount: 1 }]), async (req, res) => {
-  console.log(req.files)
-  try {
-    if (!req.files || !req.files['image']) {      
+// router.post('/imageRegistration', upload.fields([{ name: 'image', maxCount: 1 }]), async (req, res) => {
+//   console.log(req.files)
+//   try {
+//     if (!req.files || !req.files['image']) {      
 
-      return res.status(400).json({ message: 'Aucun fichier photo uploadé' });
-    }
+//       return res.status(400).json({ message: 'Aucun fichier photo uploadé' });
+//     }
 
-    // Chemin local du fichier temporaire
-    const photoFilePath = req.files['image'][0].path;
+//     // Chemin local du fichier temporaire
+//     const photoFilePath = req.files['image'][0].path;
 
-    // Upload de la photo sur Cloudinary de manière asynchrone
-    const photoUpload = cloudinary.uploader.upload(photoFilePath);
+//     // Upload de la photo sur Cloudinary de manière asynchrone
+//     const photoUpload = cloudinary.uploader.upload(photoFilePath);
 
-    // Attendre que les uploads sur Cloudinary soient terminés
-    const [photoUploadResult] = await Promise.all([photoUpload]);
+//     // Attendre que les uploads sur Cloudinary soient terminés
+//     const [photoUploadResult] = await Promise.all([photoUpload]);
 
-    // Supprime le fichier temporaire après l'upload
-    fs.unlinkSync(photoFilePath);
+//     // Supprime le fichier temporaire après l'upload
+//     fs.unlinkSync(photoFilePath);
 
-    // Récupère l'URL de la photo sur Cloudinary
-    const photoUrl = photoUploadResult.secure_url;
+//     // Récupère l'URL de la photo sur Cloudinary
+//     const photoUrl = photoUploadResult.secure_url;
 
-    // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
-    const user = await User.findOne({ token: req.body.token });
+//     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
+//     const user = await User.findOne({ token: req.body.token });
 
-    if (!user) {      
-      return res.status(404).json({ error: 'User not found' });
+//     if (!user) {      
+//       return res.status(404).json({ error: 'User not found' });
 
-    }
+//     }
 
-    const organism = await Organism.findOne({ user: user._id });
+//     const organism = await Organism.findOne({ user: user._id });
 
-    if (organism) {
+//     if (organism) {
 
-      // Met à jour l'URL de l'image de l'organisme
-      await Organism.updateOne({ _id: organism._id }, { image: photoUrl });
-      console.log("photo url : "+photoUrl)
+//       // Met à jour l'URL de l'image de l'organisme
+//       await Organism.updateOne({ _id: organism._id }, { image: photoUrl });
+//       console.log("photo url : "+photoUrl)
 
-      res.json({ result: true, photoUrl: photoUrl });
-    } else {
+//       res.json({ result: true, photoUrl: photoUrl });
+//     } else {
 
-      console.log('Organisme non trouvé imageRegistration');
-      res.json({ result: false, error: 'Organisme non trouvé imageRegistration' });
-    }
-  } catch (error) {
-    // Gérer les erreurs
-    console.error('Une erreur s\'est produite:', error);
-    res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
-  }
-});
+//       console.log('Organisme non trouvé imageRegistration');
+//       res.json({ result: false, error: 'Organisme non trouvé imageRegistration' });
+//     }
+//   } catch (error) {
+//     // Gérer les erreurs
+//     console.error('Une erreur s\'est produite:', error);
+//     res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
+//   }
+// });
 
 
 
 //oooooooooooooooooooooooooo Enregistrement du pdf ooooooooooooooooooooooooooooo
 
-router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), async (req, res) => {
-  console.log(req.files)
-  try {
+// router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), async (req, res) => {
+//   console.log(req.files)
+//   try {
 
-    // Vérifie si les fichiers photo ont été uploadés
-    if (!req.files || !req.files['doc']) {      
+//     // Vérifie si les fichiers photo ont été uploadés
+//     if (!req.files || !req.files['doc']) {      
 
-      return res.status(400).json({ message: 'Aucun fichier photo uploadé' });
-    }
+//       return res.status(400).json({ message: 'Aucun fichier photo uploadé' });
+//     }
 
-    // Chemin local du fichier temporaire
-    const docFilePath = req.files['doc'][0].path;
+//     // Chemin local du fichier temporaire
+//     const docFilePath = req.files['doc'][0].path;
 
-    // Upload de la photo sur Cloudinary de manière asynchrone
-    const docUpload = cloudinary.uploader.upload(docFilePath);
+//     // Upload de la photo sur Cloudinary de manière asynchrone
+//     const docUpload = cloudinary.uploader.upload(docFilePath);
 
-    // Attendre que les uploads sur Cloudinary soient terminés
-    const [docUploadResult] = await Promise.all([docUpload]);
+//     // Attendre que les uploads sur Cloudinary soient terminés
+//     const [docUploadResult] = await Promise.all([docUpload]);
 
-    // Supprime le fichier temporaire après l'upload
-    fs.unlinkSync(docFilePath);
+//     // Supprime le fichier temporaire après l'upload
+//     fs.unlinkSync(docFilePath);
 
-    // Récupère l'URL de la photo sur Cloudinary
-    const docUrl = docUploadResult.secure_url;
+//     // Récupère l'URL de la photo sur Cloudinary
+//     const docUrl = docUploadResult.secure_url;
 
-    // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
-    const user = await User.findOne({ token: req.body.token });
+//     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
+//     const user = await User.findOne({ token: req.body.token });
 
-    if (!user) {      
+//     if (!user) {      
 
-      return res.status(404).json({ error: 'User not found' });
+//       return res.status(404).json({ error: 'User not found' });
 
-    }
+//     }
 
-    const organism = await Organism.findOne({ user: user._id });
+//     const organism = await Organism.findOne({ user: user._id });
 
-    if (organism) {
+//     if (organism) {
 
-      // Met à jour l'URL de l'image de l'organisme
-      await Organism.updateOne({ _id: organism._id }, { doc: docUrl });
-      console.log(docUrl)
+//       // Met à jour l'URL de l'image de l'organisme
+//       await Organism.updateOne({ _id: organism._id }, { doc: docUrl });
+//       console.log(docUrl)
 
-      // Renvoie une réponse avec le nom de l'organisme mis à jour
-      res.json({ result: true, docUrl: docUrl });
-    } else {
+//       // Renvoie une réponse avec le nom de l'organisme mis à jour
+//       res.json({ result: true, docUrl: docUrl });
+//     } else {
 
-      console.log('Organisme non trouvé docRegistration');
-      res.json({ result: false, error: 'Organisme non trouvé docRegistration' });
-    }
-  } catch (error) {
-    console.error('Une erreur s\'est produite:', error);
-    res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
-  }
-});
+//       console.log('Organisme non trouvé docRegistration');
+//       res.json({ result: false, error: 'Organisme non trouvé docRegistration' });
+//     }
+//   } catch (error) {
+//     console.error('Une erreur s\'est produite:', error);
+//     res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
+//   }
+// });
 
 
 //ooooooooooooooooooooo Enregistrement de l'organisme oooooooooooooooooooooooooo
@@ -174,12 +174,15 @@ router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), a
 
 // router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
   router.post('/organismRegistration', async (req, res) => { 
+    console.log(req.body)
 try {
 
     // console.log(req.body)
       // Récupérer les données JSON depuis le corps de la requête
-      const orgData = JSON.parse(req.body.orgData);    
-      const token =  JSON.parse(req.body.token);    
+      const orgData = req.body.orgData;    
+      const token =  req.body.token; 
+      console.log(orgData+" "+token)
+   
 
     // Vérifie si les fichiers photo et doc ont été uploadés
     // if (!req.files || !req.files['photo'] || !req.files['doc']) {
