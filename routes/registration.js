@@ -22,7 +22,7 @@ cloudinary.config({
 // Configuration de Multer pour le stockage des fichiers
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../uploads/'));
+    cb(null, path.join(__dirname, './uploads/'));
   },
   filename: function (req, file, cb) {
     cb(null, file.originalname);
