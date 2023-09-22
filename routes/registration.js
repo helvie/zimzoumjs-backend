@@ -18,24 +18,41 @@ cloudinary.config({
 });
 
 
-// Configuration de Multer pour le stockage des fichiers
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname);
-  },
-});
+// // Configuration de Multer pour le stockage des fichiers
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, 'uploads/');
+//   },
+//   filename: function (req, file, cb) {
+//     cb(null, file.originalname);
+//   },
+// });
 
-// Configuration de Multer pour la gestion des fichiers
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // Limite de taille maximale en octets (ici, 10 Mo)
-  },
-});
+// // Configuration de Multer pour la gestion des fichiers
+// const upload = multer({
+//   storage: storage,
+//   limits: {
+//     fileSize: 10 * 1024 * 1024, // Limite de taille maximale en octets (ici, 10 Mo)
+//   },
+// });
 
+async function uploadToCloudinary(fileBuffer, folderName) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: folderName },
+      (error, result) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve(result.secure_url); // Renvoyez l'URL sécurisée de l'image
+        }
+      }
+    );
+
+    streamifier.createReadStream(fileBuffer).pipe(stream);
+  });
+}
 
 //oooooooooooooooooooooooo Enregistrement de l'image ooooooooooooooooooooooooooo
 
@@ -155,8 +172,9 @@ router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), a
 //ooooooooooooooooooooo Enregistrement de l'organisme oooooooooooooooooooooooooo
 
 
-router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
-  try {
+// router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'doc', maxCount: 1 }]), async (req, res) => {
+  router.post('/organismRegistration', async (req, res) => { 
+try {
 
     console.log(req.body)
       // Récupérer les données JSON depuis le corps de la requête
@@ -169,25 +187,31 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
     }
 
     // Chemins locaux des fichiers temporaires
-    const photoFilePath = req.files['photo'][0].path;
-    const pdfFilePath = req.files['doc'][0].path;
+    // const photoFilePath = req.files['photo'][0].path;
+    // const pdfFilePath = req.files['doc'][0].path;
 
-    // Upload de la photo sur Cloudinary de manière asynchrone
-    const photoUpload = cloudinary.uploader.upload(photoFilePath);
-    // Upload du PDF sur Cloudinary de manière asynchrone
-    const pdfUpload = cloudinary.uploader.upload(pdfFilePath, { resource_type: 'raw' });
+    const photoFile = req.files['photo'][0];
+    const pdfFile = req.files['doc'][0];
+
+    const photoUrl = await uploadToCloudinary(photoFile.buffer, 'demo');
+    const pdfUrl = await uploadToCloudinary(pdfFile.buffer, 'demo');
+
+    // // Upload de la photo sur Cloudinary de manière asynchrone
+    // const photoUpload = cloudinary.uploader.upload(photoFilePath);
+    // // Upload du PDF sur Cloudinary de manière asynchrone
+    // const pdfUpload = cloudinary.uploader.upload(pdfFilePath, { resource_type: 'raw' });
 
     // Attendre que les uploads sur Cloudinary soient terminés
-    const [photoUploadResult, pdfUploadResult] = await Promise.all([photoUpload, pdfUpload]);
+    const [photoUrlResult, pdfUrlResult] = await Promise.all([photoUrl, pdfUrl]);
 
     // Supprime les fichiers temporaires après l'upload
-    fs.unlinkSync(pdfFilePath);
-    fs.unlinkSync(photoFilePath);
+    // fs.unlinkSync(pdfFilePath);
+    // fs.unlinkSync(photoFilePath);
 
-    // Récupère l'URL de la photo sur Cloudinary
-    const photoUrl = photoUploadResult.secure_url;
-    // Récupère l'URL du PDF sur Cloudinary
-    const pdfUrl = pdfUploadResult.secure_url;
+    // // Récupère l'URL de la photo sur Cloudinary
+    // const photoUrl = photoUploadResult.secure_url;
+    // // Récupère l'URL du PDF sur Cloudinary
+    // const pdfUrl = pdfUploadResult.secure_url;
 
     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
     const user = await User.findOne({ token: token });
