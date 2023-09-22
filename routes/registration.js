@@ -176,25 +176,25 @@ router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), a
   router.post('/organismRegistration', async (req, res) => { 
 try {
 
-    console.log(req.body)
+    // console.log(req.body)
       // Récupérer les données JSON depuis le corps de la requête
       const orgData = JSON.parse(req.body.orgData);    
       const token =  JSON.parse(req.body.token);    
 
     // Vérifie si les fichiers photo et doc ont été uploadés
-    if (!req.files || !req.files['photo'] || !req.files['doc']) {
-      return res.status(400).json({ message: 'Aucun fichier photo ou PDF uploadé' });
-    }
+    // if (!req.files || !req.files['photo'] || !req.files['doc']) {
+    //   return res.status(400).json({ message: 'Aucun fichier photo ou PDF uploadé' });
+    // }
 
     // Chemins locaux des fichiers temporaires
     // const photoFilePath = req.files['photo'][0].path;
     // const pdfFilePath = req.files['doc'][0].path;
 
-    const photoFile = req.files['photo'][0];
-    const pdfFile = req.files['doc'][0];
+    // const photoFile = req.files['photo'][0];
+    // const pdfFile = req.files['doc'][0];
 
-    const photoUrl = await uploadToCloudinary(photoFile.buffer, 'demo');
-    const pdfUrl = await uploadToCloudinary(pdfFile.buffer, 'demo');
+    // const photoUrl = await uploadToCloudinary(photoFile.buffer, 'demo');
+    // const pdfUrl = await uploadToCloudinary(pdfFile.buffer, 'demo');
 
     // // Upload de la photo sur Cloudinary de manière asynchrone
     // const photoUpload = cloudinary.uploader.upload(photoFilePath);
@@ -202,7 +202,7 @@ try {
     // const pdfUpload = cloudinary.uploader.upload(pdfFilePath, { resource_type: 'raw' });
 
     // Attendre que les uploads sur Cloudinary soient terminés
-    const [photoUrlResult, pdfUrlResult] = await Promise.all([photoUrl, pdfUrl]);
+    // const [photoUrlResult, pdfUrlResult] = await Promise.all([photoUrl, pdfUrl]);
 
     // Supprime les fichiers temporaires après l'upload
     // fs.unlinkSync(pdfFilePath);
