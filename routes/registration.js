@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/users');
+const Regularclass = require('../models/regularclasses');
+const Regularclassdetail = require('../models/regularclassesdetails');
 require('../models/connection');
 const Organism = require('../models/organisms');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier'); // Importez streamifier
 const multer = require('multer');
 const path = require('path');
+
+
 
 // Configuration de Cloudinary
 cloudinary.config({
@@ -54,43 +58,52 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
         })
       );
     });
-    const dataToSend = JSON.parse(req.body.dataToSend);
-    console.log(dataToSend);
-    const user = await User.findOne({ token: "2TQScApBOfGByJnNPFjf3jXGToDfuAro" });
+
+    const data = JSON.parse(req.body.dataToSend);
+    const user = await User.findOne({ token: data.token });
 
     const newOrganism = new Organism({
-      respCivility: dataToSend.respCivility,
-      respName: dataToSend.respName,
-      respNameDisplay: true,
-      phonePrivate: '0156568989',
-      emailPrivate: 'jolinet@sj.fr',
-      organismSort: 'mairie',
-      orgName: 'Service jeunesse',
+      respCivility: data.respCivility,
+      respName: data.respName,
+      respNameDisplay: data.respNameDisplay,
+      phonePrivate: data.phonePrivate,
+      emailPrivate: data.emailPrivate,
+      organismSort: data.organismSort,
+      orgName: data.orgName,
       location: {
-        longitude: 1.981233,
-        latitude: 46.943692,
-        route: '85 Rue des Alouettes',
-        postalCode: '36100',
-        city: 'Issoudun',
+        longitude: data.longitude,
+        latitude: data.latitude,
+        route: data.route,
+        postalCode: data.postalCode,
+        city: data.city,
       },
-      emailPublic: 'contact@sj.fr',
-      phonePublic: '0125365456',
-      website: 'www.servicesjeunesse.fr',
+      emailPublic: data.emailPublic,
+      phonePublic: data.phonePublic,
+      website: data.website,
       image: photoResult,
       doc: docResult,
-      description: 'Une équipe d’animateurs propose aux jeunes de 12 à 20 ans des activités ludiques, sportives, culturelles et pédagogiques tout au long de l’année. Elle organise des séjours et des sorties le mercredi et pendant les vacances. Le service accompagne également les jeunes dans leurs recherches et leurs projets.',
+      description: data.description,
       orgVisible: true,
-      regularClasses: [],
+      regularclasses: [],
       orgNumber: 1,
       user: user,
-      respRole: 'president'
+      respRole: data.respRole
     });
+
+    
+    const lastOrganism = await Organism.findOne({}, {}, { sort: { orgNumber: -1 } });
+    if (lastOrganism) {
+      newOrganism.orgNumber = lastOrganism.orgNumber + 1;
+    } else {
+      // Aucun organisme trouvé dans la base de données, initialisation orgNumber à 1
+      newOrganism.orgNumber = 1;
+    }
 
     // Enregistrer l'organisme dans la base de données
     const savedOrganism = await newOrganism.save();
 
     // Retourner la réponse avec les données de l'organisme nouvellement enregistré
-    res.json({ result: savedOrganism.orgName });
+    res.json({ success: true, result: savedOrganism.orgName });
   } catch (error) {
     console.error('Une erreur s\'est produite:', error);
     res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
@@ -99,32 +112,48 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
 
 //oooooooooooooooooooooooo Enregistrement de l'image ooooooooooooooooooooooooooo
 
-// Route pour l'enregistrement d'un organisme
 router.post('/imageRegistration', upload.fields([{ name: 'image', maxCount: 1 }]), async (req, res) => {
-  console.log(req.files)
+//   console.log(req.files)
+console.log("etape 1")
   try {
-    if (!req.files || !req.files['image']) {
+  const photoFile = req.files.image[0];
+  
+  const photoResult = await new Promise((resolve, reject) => {
+    const photoStream = streamifier.createReadStream(photoFile.buffer);
+    photoStream.pipe(
+      cloudinary.uploader.upload_stream({ folder: "demo" }, (error, result) => {
+        if (error) {
+          console.error(error);
+          return reject(error);
+        }
+        resolve(result.secure_url);
+      })
+    );
+  });
+  console.log("etape 2")
 
-      return res.status(400).json({ message: 'Aucun fichier photo uploadé' });
-    }
 
-    // Chemin local du fichier temporaire
-    const photoFilePath = req.files['image'][0].path;
+//       return res.status(400).json({ message: 'Aucun fichier photo uploadé' });
+//     }
 
-    // Upload de la photo sur Cloudinary de manière asynchrone
-    const photoUpload = cloudinary.uploader.upload(photoFilePath);
+//     // Chemin local du fichier temporaire
+//     const photoFilePath = req.files['image'][0].path;
 
-    // Attendre que les uploads sur Cloudinary soient terminés
-    const [photoUploadResult] = await Promise.all([photoUpload]);
+//     // Upload de la photo sur Cloudinary de manière asynchrone
+//     const photoUpload = cloudinary.uploader.upload(photoFilePath);
 
-    // Supprime le fichier temporaire après l'upload
-    fs.unlinkSync(photoFilePath);
+//     // Attendre que les uploads sur Cloudinary soient terminés
+//     const [photoUploadResult] = await Promise.all([photoUpload]);
 
-    // Récupère l'URL de la photo sur Cloudinary
-    const photoUrl = photoUploadResult.secure_url;
+//     // Supprime le fichier temporaire après l'upload
+//     fs.unlinkSync(photoFilePath);
 
-    // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
+//     // Récupère l'URL de la photo sur Cloudinary
+//     const photoUrl = photoUploadResult.secure_url;
+
+//     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
     const user = await User.findOne({ token: req.body.token });
+    console.log("etape 3")
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -132,14 +161,15 @@ router.post('/imageRegistration', upload.fields([{ name: 'image', maxCount: 1 }]
     }
 
     const organism = await Organism.findOne({ user: user._id });
+    console.log("etape 4")
 
     if (organism) {
 
       // Met à jour l'URL de l'image de l'organisme
-      await Organism.updateOne({ _id: organism._id }, { image: photoUrl });
-      console.log("photo url : " + photoUrl)
+      await Organism.updateOne({ _id: organism._id }, { image: photoResult });
+      // console.log("photo url : " + photoResult)
 
-      res.json({ result: true, photoUrl: photoUrl });
+      res.json({ result: true, photoUrl: photoResult });
     } else {
 
       console.log('Organisme non trouvé');
@@ -152,68 +182,112 @@ router.post('/imageRegistration', upload.fields([{ name: 'image', maxCount: 1 }]
   }
 });
 
-
-
 //oooooooooooooooooooooooooo Enregistrement du pdf ooooooooooooooooooooooooooooo
 
-router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), async (req, res) => {
-  console.log(req.files)
+// router.post('/docRegistration', upload.fields([{ name: 'doc', maxCount: 1 }]), async (req, res) => {
+//   console.log(req.files)
+//   try {
+
+//     // Vérifie si les fichiers photo ont été uploadés
+//     if (!req.files || !req.files['doc']) {
+
+//       return res.status(400).json({ message: 'Aucun fichier photo uploadé' });
+//     }
+
+//     // Chemin local du fichier temporaire
+//     const docFilePath = req.files['doc'][0].path;
+
+//     // Upload de la photo sur Cloudinary de manière asynchrone
+//     const docUpload = cloudinary.uploader.upload(docFilePath);
+
+//     // Attendre que les uploads sur Cloudinary soient terminés
+//     const [docUploadResult] = await Promise.all([docUpload]);
+
+//     // Supprime le fichier temporaire après l'upload
+//     fs.unlinkSync(docFilePath);
+
+//     // Récupère l'URL de la photo sur Cloudinary
+//     const docUrl = docUploadResult.secure_url;
+
+//     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
+//     const user = await User.findOne({ token: req.body.token });
+
+//     if (!user) {
+
+//       return res.status(404).json({ error: 'User not found' });
+
+//     }
+
+//     const organism = await Organism.findOne({ user: user._id });
+
+//     if (organism) {
+
+//       // Met à jour l'URL de l'image de l'organisme
+//       await Organism.updateOne({ _id: organism._id }, { doc: docUrl });
+//       console.log(docUrl)
+
+//       // Renvoie une réponse avec le nom de l'organisme mis à jour
+//       res.json({ result: true, docUrl: docUrl });
+//     } else {
+
+//       console.log('Organisme non trouvé');
+//       res.json({ result: false, error: 'Organisme non trouvé' });
+//     }
+//   } catch (error) {
+//     console.error('Une erreur s\'est produite:', error);
+//     res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
+//   }
+// });
+
+router.post('/docRegistration', upload.single('doc'), async (req, res) => {
   try {
-
-    // Vérifie si les fichiers photo ont été uploadés
-    if (!req.files || !req.files['doc']) {
-
-      return res.status(400).json({ message: 'Aucun fichier photo uploadé' });
+    if (!req.file) {
+      return res.status(400).json({ message: 'Aucun fichier document uploadé' });
     }
 
     // Chemin local du fichier temporaire
-    const docFilePath = req.files['doc'][0].path;
+    const docFilePath = req.file.path;
 
-    // Upload de la photo sur Cloudinary de manière asynchrone
-    const docUpload = cloudinary.uploader.upload(docFilePath);
-
-    // Attendre que les uploads sur Cloudinary soient terminés
-    const [docUploadResult] = await Promise.all([docUpload]);
+    // Upload du document sur Cloudinary de manière asynchrone
+    const docUploadResult = await cloudinary.uploader.upload(docFilePath, { folder: "demo" });
 
     // Supprime le fichier temporaire après l'upload
     fs.unlinkSync(docFilePath);
 
-    // Récupère l'URL de la photo sur Cloudinary
+    // Récupère l'URL du document sur Cloudinary
     const docUrl = docUploadResult.secure_url;
 
     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
     const user = await User.findOne({ token: req.body.token });
 
     if (!user) {
-
       return res.status(404).json({ error: 'User not found' });
-
     }
 
     const organism = await Organism.findOne({ user: user._id });
 
     if (organism) {
-
-      // Met à jour l'URL de l'image de l'organisme
+      // Met à jour l'URL du document de l'organisme
       await Organism.updateOne({ _id: organism._id }, { doc: docUrl });
-      console.log(docUrl)
+      // console.log(docUrl);
 
-      // Renvoie une réponse avec le nom de l'organisme mis à jour
       res.json({ result: true, docUrl: docUrl });
     } else {
-
       console.log('Organisme non trouvé');
       res.json({ result: false, error: 'Organisme non trouvé' });
     }
   } catch (error) {
     console.error('Une erreur s\'est produite:', error);
-    res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement de l\'organisme' });
+    res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'enregistrement du document' });
   }
 });
+
 //ooooooooooooooooooooo Enregistrement de l'activité oooooooooooooooooooooooo
 
 router.post("/activityRegistration", async (req, res) => {
-  const { token, regularClass, regularClassesDetails } = req.body.dataActivity;
+  console.log("essai")
+
+  const { token, regularclass, regularclassesdetails } = req.body.dataActivity;
   console.log("essai1")
   try {
     const user = await User.findOne({ token: token });
@@ -232,33 +306,33 @@ router.post("/activityRegistration", async (req, res) => {
       return res.status(404).json({ message: "Organisme introuvable" });
     }
 
-    const newRegularClass = new RegularClass(regularClass);
-    console.log(newRegularClass)
+    const newRegularclass = new Regularclass(regularclass);
+    // console.log("new regular class : "+newRegularclass)
 
-    const savedRegularClass = await newRegularClass.save();
+    const savedRegularclass = await newRegularclass.save();
     console.log("essai5")
 
-    const savedRegularClassesDetails = await Promise.all(
+    const savedRegularclassesdetails = await Promise.all(
 
-      regularClassesDetails.map(async (detail) => {
-        const newRegularClassDetail = new RegularClassDetail(detail.data);
-        newRegularClassDetail.startTime = `${detail.data.startHours}:${detail.data.startMinutes}`;
-        const savedRegularClassDetail = await newRegularClassDetail.save();
-        return savedRegularClassDetail._id;
+      regularclassesdetails.map(async (detail) => {
+        const newRegularclassdetail = new Regularclassdetail(detail.data);
+        newRegularclassdetail.startTime = `${detail.data.startHours}:${detail.data.startMinutes}`;
+        const savedRegularclassdetail = await newRegularclassdetail.save();
+        return savedRegularclassdetail._id;
       })
     );
     console.log("essai6")
 
 
-    savedRegularClass.regularClassesDetails = savedRegularClassesDetails;
+    savedRegularclass.regularclassesdetails = savedRegularclassesdetails;
     console.log("essai7")
 
     // Enregistrez la RegularClass une seule fois
-    await savedRegularClass.save();
+    await savedRegularclass.save();
     console.log("essai8")
 
     // Ajoutez l'ID de la RegularClass à l'organisme
-    organism.regularClasses.push(savedRegularClass._id);
+    organism.regularclasses.push(savedRegularclass._id);
     await organism.save();
     console.log("essai9")
 
@@ -290,7 +364,7 @@ router.put("/updateActivity", async (req, res) => {
       return res.status(404).json({ message: "Organisme introuvable" });
     }
 
-    const existingActivity = await RegularClass.findById(activityData._id);
+    const existingActivity = await Regularclass.findById(activityData._id);
 
     if (!existingActivity) {
 
@@ -309,7 +383,7 @@ router.put("/updateActivity", async (req, res) => {
     await existingActivity.save();
 
     // Récupérez les ID des détails de la base de données
-    const existingDetailIds = existingActivity.regularClassesDetails.map(detail => detail.toString());
+    const existingDetailIds = existingActivity.regularclassesdetails.map(detail => detail.toString());
     // // Récupérez les ID des détails du tableau B
 
     const updatedDetailIds = detailData.map(detail => detail.data._id ? detail.data._id : null);
@@ -320,9 +394,9 @@ router.put("/updateActivity", async (req, res) => {
     // // Supprimez les détails de la base de données
     for (const detailId of detailsToDelete) {
 
-      await RegularClassDetail.findByIdAndRemove(detailId);
+      await Regularclassdetail.findByIdAndRemove(detailId);
 
-      existingActivity.regularClassesDetails = existingActivity.regularClassesDetails.filter(
+      existingActivity.regularclassesdetails = existingActivity.regularclassesdetails.filter(
         (detail) => detail.toString() !== detailId
       );
     }
@@ -330,14 +404,14 @@ router.put("/updateActivity", async (req, res) => {
     // // mise à jour ou ajout des créneaux
     for (const updatedDetail of detailData) {
 
-      const existingDetail = await RegularClassDetail.findById(updatedDetail.data._id);
+      const existingDetail = await Regularclassdetail.findById(updatedDetail.data._id);
 
       if (!existingDetail) {
-        const newDetail = new RegularClassDetail(updatedDetail.data);
+        const newDetail = new Regularclassdetail(updatedDetail.data);
         const savedDetail = await newDetail.save();
 
         //     // Ajoutez l'ID du nouveau détail à l'activité
-        existingActivity.regularClassesDetails.push(savedDetail._id);
+        existingActivity.regularclassesdetails.push(savedDetail._id);
       } else {
         //     // Mettez à jour les propriétés du détail existant
         existingDetail.availability = updatedDetail.data.availability;
@@ -357,8 +431,8 @@ router.put("/updateActivity", async (req, res) => {
 
     await existingActivity.save();
 
-    const activity = await RegularClass.findById(activityData._id)
-      .populate("regularClassesDetails");
+    const activity = await Regularclass.findById(activityData._id)
+      .populate("regularclassesdetails");
 
     res.status(200).json({ result: "Activité mise à jour avec succès", updatedActivity: activity });
   } catch (error) {
@@ -370,60 +444,60 @@ router.put("/updateActivity", async (req, res) => {
 
 module.exports = router;
 
-    // Vérifie si les fichiers photo et doc ont été uploadés
-    //     if (!req.files || !req.files['photo'] || !req.files['doc']) {
-    //       return res.status(400).json({ message: 'Aucun fichier photo ou PDF uploadé' });
-    //     }
+// Vérifie si les fichiers photo et doc ont été uploadés
+//     if (!req.files || !req.files['photo'] || !req.files['doc']) {
+//       return res.status(400).json({ message: 'Aucun fichier photo ou PDF uploadé' });
+//     }
 
-    //     // Chemins locaux des fichiers temporaires
-    //     const photoFilePath = req.files['photo'][0].path;
-    //     const pdfFilePath = req.files['doc'][0].path;
+//     // Chemins locaux des fichiers temporaires
+//     const photoFilePath = req.files['photo'][0].path;
+//     const pdfFilePath = req.files['doc'][0].path;
 
-    //     // Upload de la photo sur Cloudinary de manière asynchrone
-    //     const photoUpload = cloudinary.uploader.upload(photoFilePath);
-    //     // Upload du PDF sur Cloudinary de manière asynchrone
-    //     const pdfUpload = cloudinary.uploader.upload(pdfFilePath, { resource_type: 'raw' });
+//     // Upload de la photo sur Cloudinary de manière asynchrone
+//     const photoUpload = cloudinary.uploader.upload(photoFilePath);
+//     // Upload du PDF sur Cloudinary de manière asynchrone
+//     const pdfUpload = cloudinary.uploader.upload(pdfFilePath, { resource_type: 'raw' });
 
-    //     // Attendre que les uploads sur Cloudinary soient terminés
-    //     const [photoUploadResult, pdfUploadResult] = await Promise.all([photoUpload, pdfUpload]);
+//     // Attendre que les uploads sur Cloudinary soient terminés
+//     const [photoUploadResult, pdfUploadResult] = await Promise.all([photoUpload, pdfUpload]);
 
-    //     // Supprime les fichiers temporaires après l'upload
-    //     fs.unlinkSync(photoFilePath);
-    //     fs.unlinkSync(pdfFilePath);
+//     // Supprime les fichiers temporaires après l'upload
+//     fs.unlinkSync(photoFilePath);
+//     fs.unlinkSync(pdfFilePath);
 
-    //     // Récupère l'URL de la photo sur Cloudinary
-    //     const photoUrl = photoUploadResult.secure_url;
-    //     // Récupère l'URL du PDF sur Cloudinary
-    //     const pdfUrl = pdfUploadResult.secure_url;
+//     // Récupère l'URL de la photo sur Cloudinary
+//     const photoUrl = photoUploadResult.secure_url;
+//     // Récupère l'URL du PDF sur Cloudinary
+//     const pdfUrl = pdfUploadResult.secure_url;
 
-    //     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
-    //     const user = await User.findOne({ token: req.body.token });
-    //     if (!user) {
-    //       return res.status(404).json({ error: 'User not found' });
-    //     }
+//     // Recherche de l'utilisateur correspondant au jeton (token) fourni dans la requête
+//     const user = await User.findOne({ token: req.body.token });
+//     if (!user) {
+//       return res.status(404).json({ error: 'User not found' });
+//     }
 
-    //     const lastOrganism = await Organism.findOne({}, {}, { sort: { orgNumber: -1 } });
+//     const lastOrganism = await Organism.findOne({}, {}, { sort: { orgNumber: -1 } });
 
-    //     // Récupérer les données JSON depuis le corps de la requête
-    //     const orgData = JSON.parse(req.body.orgData);
+//     // Récupérer les données JSON depuis le corps de la requête
+//     const orgData = JSON.parse(req.body.orgData);
 
-    //     // Créer une nouvelle instance de l'objet Organism avec les données reçues
-    //     const newOrganism = new Organism(orgData);
+//     // Créer une nouvelle instance de l'objet Organism avec les données reçues
+//     const newOrganism = new Organism(orgData);
 
-    // // Vérifier si lastOrganism est null
-    // if (lastOrganism) {
-    //   newOrganism.orgNumber = lastOrganism.orgNumber + 1;
-    // } else {
-    //   // Aucun organisme trouvé dans la base de données, initialisation orgNumber à 1
-    //   newOrganism.orgNumber = 1;
-    // }
+// // Vérifier si lastOrganism est null
+// if (lastOrganism) {
+//   newOrganism.orgNumber = lastOrganism.orgNumber + 1;
+// } else {
+//   // Aucun organisme trouvé dans la base de données, initialisation orgNumber à 1
+//   newOrganism.orgNumber = 1;
+// }
 
-    //     // Assigner la clé étrangère de l'utilisateur à l'organisme
-    //     newOrganism.user = user._id;
+//     // Assigner la clé étrangère de l'utilisateur à l'organisme
+//     newOrganism.user = user._id;
 
-    //     // Assigner les URL de la photo et du PDF à l'organisme
-    //     newOrganism.image = photoUrl;
-    //     newOrganism.doc = pdfUrl;
+//     // Assigner les URL de la photo et du PDF à l'organisme
+//     newOrganism.image = photoUrl;
+//     newOrganism.doc = pdfUrl;
 
 //ooooooooooooooooooooo Enregistrement de l'organisme oooooooooooooooooooooooooo
 

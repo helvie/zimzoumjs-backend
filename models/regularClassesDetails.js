@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 
 
-const regularClassDetailSchema = mongoose.Schema({
+const regularclassdetailSchema = mongoose.Schema({
   availability:String,
   availabilityDate:Date,
   detailStartAge:Number,
@@ -16,6 +16,6 @@ const regularClassDetailSchema = mongoose.Schema({
   animator:String
 });
 
-const RegularClassDetail = mongoose.model('regularClassesDetails', regularClassDetailSchema);
+const Regularclassdetail = mongoose.model('regularclassesdetails', regularclassdetailSchema);
 
-module.exports = RegularClassDetail;
+module.exports = Regularclassdetail;

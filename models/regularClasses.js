@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
-
-const regularClassSchema = mongoose.Schema({
+const regularclassSchema = mongoose.Schema({
   category:String,
   startAge:Number,
   endAge:Number,
@@ -9,10 +8,10 @@ const regularClassSchema = mongoose.Schema({
   description:String,
   visible:Boolean,
   valid:Boolean,
-  regularClassesDetails:[{ type: mongoose.Schema.Types.ObjectId, ref: 'regularClassesDetails' }],
+  regularclassesdetails:[{ type: mongoose.Schema.Types.ObjectId, ref: 'regularclassesdetails' }],
 
 });
 
-const RegularClass = mongoose.model('regularClasses', regularClassSchema);
+const Regularclass = mongoose.model('regularclasses', regularclassSchema);
 
-module.exports = RegularClass;
+module.exports = Regularclass;

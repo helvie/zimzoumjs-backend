@@ -1,5 +1,3 @@
-
-
 const mongoose = require('mongoose');
 
 //////////////////////////////////////////////////////////////////////////////
@@ -47,7 +45,7 @@ const organismSchema = mongoose.Schema({
   sentMail:Number,
   orgMain:Boolean,
 
-  regularClasses:[{ type: mongoose.Schema.Types.ObjectId, ref: 'regularClasses' }],
+  regularclasses:[{ type: mongoose.Schema.Types.ObjectId, ref: 'regularclasses' }],
 });
 
 const Organism = mongoose.model('organisms', organismSchema);

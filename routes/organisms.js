@@ -11,9 +11,9 @@ const User = require('../models/users');
 router.get('/allOrganisms', (req, res) => {
 
   Organism.find().then(data => {
-    console.log(data[0])
-      res.json({ result: false, data: data });
-    
+    // console.log(data[0])
+    res.json({ result: false, data: data });
+
   });
 });
 
@@ -22,20 +22,22 @@ router.get('/allOrganisms', (req, res) => {
 
 router.get("/:orgNumber", async (req, res) => {
   try {
-    console.log(req.params.orgNumber);
+    orgNumber=parseFloat(req.params.orgNumber)
+    console.log("req.params "+orgNumber);
 
     const data = await Organism.findOne({
-      orgNumber: req.params.orgNumber,
+      orgNumber: orgNumber,
     }).populate({
-      path: 'regularClasses',
+      path: 'regularclasses',
+      model: 'regularclasses',
       populate: {
-        path: 'regularClassesDetails',
-        model: 'regularClassesDetails', 
+        path: 'regularclassesdetails',
+        model: 'regularclassesdetails',
       },
     });
 
     if (data) {
-      console.log(data);
+      console.log(data.regularClasses);
       res.json({ result: true, organism: data });
     } else {
       res.json({ result: false, error: "Organisme non trouvé" });
@@ -59,16 +61,18 @@ router.post("/organismDisplayForUpdate", async (req, res) => {
       const organism = await Organism.findOne({
         user: user._id,
       })
-      .populate({
-        path: 'regularClasses',
-        populate: {
-          path: 'regularClassesDetails',
-          model: 'regularClassesDetails'
-        },
-      });
+        .populate({
+          path: 'regularclasses',
+          model: 'regularclasses',
+
+          populate: {
+            path: 'regularclassesdetails',
+            model: 'regularclassesdetails'
+          },
+        });
 
       if (organism) {
-        console.log(organism);
+        // console.log(organism);
         res.json({ result: true, organism: organism });
       } else {
         console.log('Organisme non trouvé');
@@ -100,19 +104,20 @@ router.post("/updateField", async (req, res) => {
       const organism = await Organism.findOne({
         user: user._id,
       })
-      .populate({
-        path: 'regularClasses',
-        populate: {
-          path: 'regularClassesDetails',
-          model: 'regularClassesDetails'
-        },
-      });
+        .populate({
+          path: 'regularclasses',
+          model: 'regularclasses', 
+          populate: {
+            path: 'regularclassesdetails',
+            model: 'regularclassesdetails'
+          },
+        });
 
       if (organism) {
-        Organism.updateOne({ _id: organism._id }, { [field] : value }).then(() => {
-      
-        console.log("ok "+organism);
-        res.json({ result: true, organism: organism });
+        Organism.updateOne({ _id: organism._id }, { [field]: value }).then(() => {
+
+          // console.log("ok " + organism);
+          res.json({ result: true, organism: organism });
         })
       } else {
         console.log('Organisme non trouvé');
@@ -134,7 +139,7 @@ router.post("/updateField", async (req, res) => {
 
 router.post('/createdOrganism', async (req, res) => {
   try {
-    console.log(req.body.token);
+    // console.log(req.body.token);
 
     const user = await User.findOne({
       token: req.body.token,
@@ -146,10 +151,10 @@ router.post('/createdOrganism', async (req, res) => {
       });
 
       if (organism) {
-        regularClass = organism.regularClasses ? true : false;
-        res.json({ result: true, organism: organism.orgName, regularClass:regularClass });
-      console.log("resultat regularClass :"+regularClass)
-      
+        const regularclass = organism.regularclasses ? true : false;
+        res.json({ result: true, organism: organism.orgName, regularclass: regularclass });
+        // console.log("resultat regularclass :" + regularclass)
+
       } else {
         console.log('Organisme non trouvé');
         res.json({ result: false, error: 'Organisme non trouvé' });
@@ -159,7 +164,7 @@ router.post('/createdOrganism', async (req, res) => {
       res.json({ result: false, error: 'Utilisateur non trouvé' });
     }
   } catch (error) {
-    console.error('Erreur lors de la récupération des données:', error);
+    console.error('Erreur lors de la récupération des donnéeees:', error);
     res.status(500).json({ result: false, error: 'Erreur lors de la récupération des données' });
   }
 });
