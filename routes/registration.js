@@ -99,6 +99,7 @@ router.post('/organismRegistration', upload.fields([{ name: 'photo', maxCount: 1
       newOrganism.orgNumber = 1;
     }
 
+    
     // Enregistrer l'organisme dans la base de données
     const savedOrganism = await newOrganism.save();
 
